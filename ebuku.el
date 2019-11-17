@@ -239,7 +239,7 @@ prompted for confirmation by the \\[ebuku-delete-bookmark] command.)"
     (set-process-sentinel proc 'ebuku--delete-bookmark-sentinel)
     (process-send-string proc "y\n")))
 
-(defun ebuku--delete-bookmark-sentinel (proc event)
+(defun ebuku--delete-bookmark-sentinel (_proc event)
   "Internal function to wait for Buku to complete bookmark deletion.
 
 Argument PROC is the Buku process started by `ebuku--delete-bookmark-helper'.
