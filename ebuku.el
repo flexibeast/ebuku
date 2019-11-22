@@ -180,12 +180,14 @@
 ;; Keymaps.
 ;; 
 
-(defvar ebuku-mode-map (make-sparse-keymap))
-(define-key ebuku-mode-map (kbd "a") #'ebuku-add-bookmark)
-(define-key ebuku-mode-map (kbd "d") #'ebuku-delete-bookmark)
-(define-key ebuku-mode-map (kbd "e") #'ebuku-edit-bookmark)
-(define-key ebuku-mode-map (kbd "g") #'ebuku-refresh)
-(define-key ebuku-mode-map (kbd "s") #'ebuku-search)
+(defvar ebuku-mode-map
+  (let ((km (make-sparse-keymap)))
+    (define-key km (kbd "a") #'ebuku-add-bookmark)
+    (define-key km (kbd "d") #'ebuku-delete-bookmark)
+    (define-key km (kbd "e") #'ebuku-edit-bookmark)
+    (define-key km (kbd "g") #'ebuku-refresh)
+    (define-key km (kbd "s") #'ebuku-search)
+    km))
 
 
 ;;
