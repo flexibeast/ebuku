@@ -439,7 +439,7 @@ otherwise, ask for the index of the bookmark to delete."
             (let ((title (cdr (assoc 'title bookmark))))
               (if (y-or-n-p (concat "Delete bookmark \"" title "\"? "))
                   (ebuku--delete-bookmark-helper index))))
-        (error (concat "Failed to get bookmark data for index" index))))))
+        (error (concat "Failed to get bookmark data for index " index))))))
 
 (defun ebuku-edit-bookmark ()
   "Edit a bookmark in the Buku database.
@@ -474,7 +474,7 @@ otherwise, ask for the index of the bookmark to edit."
                       (ebuku-refresh)
                       (message "Bookmark updated."))
                   (error "Failed to update bookmark")))))
-        (error (concat "Failed to get bookmark data for index" index))))))
+        (error (concat "Failed to get bookmark data for index " index))))))
 
 (defun ebuku-refresh ()
   "Refresh the list of search results, based on last search."
