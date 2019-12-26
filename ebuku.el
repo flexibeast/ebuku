@@ -435,11 +435,10 @@ otherwise, ask for the index of the bookmark to delete."
         (setq index (read-from-minibuffer "Bookmark index to delete? ")))
     (let ((bookmark (ebuku--get-bookmark-at-index index)))
       (if bookmark
-          (progn
-            (let ((title (cdr (assoc 'title bookmark))))
-              (if (y-or-n-p (concat "Delete bookmark \"" title "\"? "))
-                  (ebuku--delete-bookmark-helper index))))
-        (error (concat "Failed to get bookmark data for index " index))))))
+          (let ((title (cdr (assoc 'title bookmark))))
+            (if (y-or-n-p (concat "Delete bookmark \"" title "\"? "))
+                (ebuku--delete-bookmark-helper index))))
+      (error (concat "Failed to get bookmark data for index " index)))))
 
 (defun ebuku-edit-bookmark ()
   "Edit a bookmark in the Buku database.
