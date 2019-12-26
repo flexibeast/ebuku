@@ -452,26 +452,29 @@ otherwise, ask for the index of the bookmark to edit."
         (setq index (read-from-minibuffer "Bookmark index to edit? "))
       (let ((bookmark (ebuku--get-bookmark-at-index index)))
         (if bookmark
-            (progn
-              (let ((title (cdr (assoc 'title bookmark)))
-                    (url (cdr (assoc 'url bookmark)))
-                    (comment (cdr (assoc 'comment bookmark)))
-                    (tags (cdr (assoc 'tags bookmark))))
-                (setq title (read-from-minibuffer "Title? " title))
-                (setq url (read-from-minibuffer "URL? " url))
-                (setq comment (read-from-minibuffer "Comment? " comment))
-                (setq tags (read-from-minibuffer "Tags? " tags))
-                (with-temp-buffer
-                  (if (ebuku--call-buku `("--update" ,index
-                                          "--title" ,title
-                                          "--url" ,url
-                                          "--comment" ,comment
-                                          "--tag" ,tags))
-                      (progn
-                        (ebuku-refresh)
-                        (message "Bookmark updated."))
-                    (error "Failed to update bookmark")))))
-          (error (concat "Failed to get bookmark data for index" index)))))))
+            (let ((title (read-from-minibuffer
+                          "Title? "
+                          (cdr (assoc 'title bookmark))))
+                  (url (read-from-minibuffer
+                        "URL? "
+                        (cdr (assoc 'url bookmark))))
+                  (comment (read-from-minibuffer
+                            "Comment? "
+                            (cdr (assoc 'comment bookmark))))
+                  (tags (read-from-minibuffer
+                         "Tags? "
+                         (cdr (assoc 'tags bookmark)))))
+              (with-temp-buffer
+                (if (ebuku--call-buku `("--update" ,index
+                                        "--title" ,title
+                                        "--url" ,url
+                                        "--comment" ,comment
+                                        "--tag" ,tags))
+                    (progn
+                      (ebuku-refresh)
+                      (message "Bookmark updated."))
+                  (error "Failed to update bookmark")))))
+        (error (concat "Failed to get bookmark data for index" index))))))
 
 (defun ebuku-refresh ()
   "Refresh the list of search results, based on last search."
