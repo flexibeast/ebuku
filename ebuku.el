@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 
-;;; ebuku.el --- Emacs interface to the Buku Web bookmark manager
+;;; ebuku.el --- Interface to the Buku Web bookmark manager
 
 ;; Copyright (C) 2019  Alexis <flexibeast@gmail.com>
 
