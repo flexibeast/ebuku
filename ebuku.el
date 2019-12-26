@@ -519,13 +519,8 @@ the type of search to be performed."
   "Major mode for interacting with the Buku bookmark manager.
 
       \\{ebuku-mode-map}"
-  :group 'ebuku
+  :group 'ebuku)
 
-  (kill-all-local-variables)
-  (setq-local major-mode 'ebuku-mode)
-  (setq-local mode-name "EBuku")
-  (use-local-map ebuku-mode-map)
-  (run-mode-hooks 'ebuku-mode-hook))
 
 ;;;###autoload
 (defun ebuku ()
