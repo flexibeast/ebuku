@@ -37,14 +37,17 @@ In the `*EBuku*` buffer, the following bindings are available:
 
 * <kbd>s</kbd> - Search for a bookmark (`ebuku-search`).
 
+* <kbd>r</kbd> - Show recently-added bookmarks (`ebuku-search-on-recent`).
+
 * <kbd>g</kbd> - Refresh the search results, based on last search (`ebuku-refresh`).
 
 * <kbd>q</kbd> - Quit EBuku.
 
 ## Customisation
 
-The path to the `buku` executable, as well as the faces used by
-EBuku, can be customised via the `ebuku` customize-group.
+The path to the `buku` executable, the number of bookmarks shown by
+`ebuku-search-on-recent`, and the faces used by EBuku, can be
+customised via the `ebuku` customize-group.
 
 ## TODO
 

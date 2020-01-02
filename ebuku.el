@@ -64,14 +64,17 @@
 
 ;; * `s' - Search for a bookmark (`ebuku-search').
 
+;; * `r' - Show recently-added bookmarks (`ebuku-search-on-recent').
+
 ;; * `g' - Refresh the search results, based on last search (`ebuku-refresh').
 
 ;; * `q' - Quit EBuku.
 
 ;; ## Customisation
 
-;; The path to the `buku' executable, as well as the faces used by
-;; EBuku, can be customised via the `ebuku' customize-group.
+;; The path to the `buku' executable, the number of bookmarks shown by
+;; `ebuku-search-on-recent', and the faces used by EBuku, can be
+;; customised via the `ebuku' customize-group.
 
 ;; ## TODO
 
@@ -124,6 +127,11 @@
 (defcustom ebuku-mode-hook nil
   "Functions to run when starting `ebuku-mode'."
   :type '(repeat function)
+  :group 'ebuku)
+
+(defcustom ebuku-recent-count 3
+  "Number of recently-added bookmarks to show."
+  :type 'integer
   :group 'ebuku)
 
 (defgroup ebuku-faces nil
@@ -184,6 +192,7 @@
     (define-key km (kbd "d") #'ebuku-delete-bookmark)
     (define-key km (kbd "e") #'ebuku-edit-bookmark)
     (define-key km (kbd "g") #'ebuku-refresh)
+    (define-key km (kbd "r") #'ebuku-search-on-recent)
     (define-key km (kbd "s") #'ebuku-search)
     km))
 
@@ -219,6 +228,7 @@
       ["Edit bookmark" (ebuku-edit-bookmark) :keys "e"]
       "---"
       ["Search" (ebuku-search) :keys "s"]
+      ["Recent" (ebuku-search-on-recent) :keys "r"]
       ["Refresh" (ebuku-refresh) :keys "g"]
       "---"
       ["Customize" (customize-group 'ebuku) :keys "c"]
@@ -298,9 +308,12 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                              (concat " --exclude " exclude))))
          (title-line-re
           (concat
-           "^[[:digit:]]+\\. "          ; Result number
-           "\\(.+\\) "                  ; Title
-           "\\[\\([[:digit:]]+\\)\\]\n" ; Index number
+           ;; Result number, or index number when using '--print'.
+           "^\\([[:digit:]]+\\)\\. "
+           ;; Title.
+           "\\(.+?\\)"
+           ;; Index number when not using '--print'.
+           "\\(?: \\[\\([[:digit:]]+\\)\\]\\)?\n"
            ))
          (title "")
          (index "")
@@ -312,9 +325,11 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
           (ebuku--call-buku `(,type ,term))
         (ebuku--call-buku `(,type ,term "--exclude" ,exclude)))
       (setq ebuku--last-search `(,type ,prompt ,term ,exclude))
-      (if (re-search-backward "^\\([[:digit:]]+\\)\\." nil t)
-          (setq count (match-string 1))
-        (setq count "0"))
+      (if (string= "--print" type)
+          (setq count (number-to-string ebuku-recent-count))
+        (if (re-search-backward "^\\([[:digit:]]+\\)\\." nil t)
+            (setq count (match-string 1))
+          (setq count "0")))
       (goto-char (point-min))
       (with-current-buffer "*EBuku*"
         (let ((inhibit-read-only t))
@@ -329,8 +344,13 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
             (insert (concat " Found " count " results for '" search "'.\n\n"))))))
       (unless (string= "0" count)
         (while (re-search-forward title-line-re nil t)
-          (setq title (match-string 1))
-          (setq index (match-string 2))
+          (if (string= "--print" type)
+              (progn
+                (setq index (match-string 1))
+                (setq title (match-string 2)))
+            (progn
+              (setq title (match-string 2))
+              (setq index (match-string 3))))
           (re-search-forward "^\\s-+> \\([^\n]+\\)") ; URL
           (setq url (match-string 1))
           (forward-line)
@@ -502,7 +522,16 @@ the type of search to be performed."
   "Do a `buku' search using '--sany'."
   (interactive)
   (ebuku--search-helper "--sany" "Keyword? "))
-  
+
+(defun ebuku-search-on-recent ()
+  "Do a `buku' search using '--print' to get recently-added bookmarks."
+  (interactive)
+  (ebuku--search-helper "--print"
+                        "_" ; We don't need to prompt the user in this case.
+                        (concat "-"
+                                (number-to-string ebuku-recent-count))
+                        ""))
+
 (defun ebuku-search-on-reg ()
   "Do a `buku' search using '--sreg'."
   (interactive)
@@ -540,12 +569,12 @@ the type of search to be performed."
                   "\n"
                   " 'a' to add a bookmark; 'd' to delete a bookmark;\n"
                   " 'e' to edit a bookmark;\n"
-                  " 's' to search for bookmarks; 'g' to refresh search;\n"
-                  " 'q' to quit.\n"
+                  " 's' to search; 'r' to show recent additions;\n"
+                  " 'g' to refresh results; 'q' to quit.\n"
                   "\n")
                  'face 'ebuku-help-face))
         (insert (propertize
-                 " ---------------------------------------------------\n\n"
+                 " ------------------------------------------------\n\n"
                  'face 'ebuku-separator-face))
         (add-text-properties (point-min) (point)
                              '(read-only t intangible t))
