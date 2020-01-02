@@ -546,7 +546,7 @@ the type of search to be performed."
 (define-derived-mode ebuku-mode special-mode "EBuku"
   "Major mode for interacting with the Buku bookmark manager.
 
-      \\{ebuku-mode-map}"
+\\{ebuku-mode-map}"
   :group 'ebuku)
 
 
