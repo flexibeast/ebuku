@@ -606,9 +606,11 @@ the type of search to be performed."
         (insert (propertize
                  " ------------------------------------------------\n\n"
                  'face 'ebuku-separator-face))
+        (setq ebuku--results-start (point))
+        (insert " [ Please specify a search, or press 'r' for recent additions. ]")
+        (goto-char ebuku--results-start)
         (add-text-properties (point-min) (point)
                              '(read-only t intangible t))
-        (setq ebuku--results-start (point))
         (ebuku--create-mode-menu)
         (setq header-line-format nil)
         (ebuku-mode))
