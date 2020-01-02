@@ -52,6 +52,14 @@
 
 ;; In the `*EBuku*' buffer, the following bindings are available:
 
+;; * `s' - Search for a bookmark (`ebuku-search').
+
+;; * `r' - Show recently-added bookmarks (`ebuku-search-on-recent').
+
+;; * `g' - Refresh the search results, based on last search (`ebuku-refresh').
+
+;; * `RET' - Open the bookmark at point in a browser (`ebuku-open-url').
+
 ;; * `a' - Add a new bookmark (`ebuku-add-bookmark').
 
 ;; * `d' - Delete a bookmark (`ebuku-delete-bookmark').  If point is on
@@ -61,12 +69,6 @@
 ;; * `e' - Edit a bookmark (`ebuku-edit-bookmark').  If point is on a
 ;;   bookmark, edit that bookmark; otherwise, ask for the index of the
 ;;   bookmark to edit.
-
-;; * `s' - Search for a bookmark (`ebuku-search').
-
-;; * `r' - Show recently-added bookmarks (`ebuku-search-on-recent').
-
-;; * `g' - Refresh the search results, based on last search (`ebuku-refresh').
 
 ;; * `q' - Quit EBuku.
 
@@ -183,6 +185,12 @@
   "Face for *EBuku* bookmark URLs."
   :group 'ebuku-faces)
 
+(defface ebuku-url-highlight-face
+  '((t
+     :inherit highlight))
+  "Face for highlighting *EBuku* bookmark URLs."
+  :group 'ebuku-faces)
+
 
 ;;
 ;; Keymaps.
@@ -196,6 +204,9 @@
     (define-key km (kbd "g") #'ebuku-refresh)
     (define-key km (kbd "r") #'ebuku-search-on-recent)
     (define-key km (kbd "s") #'ebuku-search)
+    (define-key km (kbd "<RET>") #'ebuku-open-url)
+    (define-key km [mouse-1] #'ebuku-open-url)
+    (define-key km [mouse-2] #'ebuku-open-url)
     km))
 
 
@@ -225,13 +236,14 @@
   "Internal function to create the `ebuku-mode' menu."
   (easy-menu-define ebuku--menu ebuku-mode-map "Menu bar entry for EBuku"
     '("EBuku"
-      ["Add bookmark" (ebuku-add-bookmark) :keys "a"]
-      ["Delete bookmark" (ebuku-delete-bookmark) :keys "d"]
-      ["Edit bookmark" (ebuku-edit-bookmark) :keys "e"]
-      "---"
       ["Search" (ebuku-search) :keys "s"]
       ["Recent" (ebuku-search-on-recent) :keys "r"]
       ["Refresh" (ebuku-refresh) :keys "g"]
+      ["Open bookmark" (ebuku-open-url) :keys "RET"]
+      "---"
+      ["Add bookmark" (ebuku-add-bookmark) :keys "a"]
+      ["Delete bookmark" (ebuku-delete-bookmark) :keys "d"]
+      ["Edit bookmark" (ebuku-edit-bookmark) :keys "e"]
       "---"
       ["Customize" (customize-group 'ebuku) :keys "c"]
       ["Quit" (kill-buffer) :keys "q"])))
@@ -393,7 +405,9 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                       (propertize url
                                   'buku-index index
                                   'data url
-                                  'face 'ebuku-url-face)
+                                  'face 'ebuku-url-face
+                                  'mouse-face 'ebuku-url-highlight-face
+                                  'help-echo "mouse-1: open link in browser")
                       (propertize "\n"
                                   'buku-index index))
               (unless (string= "" comment)
@@ -497,6 +511,18 @@ otherwise, ask for the index of the bookmark to edit."
                   (error "Failed to update bookmark")))))
         (error (concat "Failed to get bookmark data for index " index))))))
 
+(defun ebuku-open-url ()
+  "Open the URL for the bookmark at point."
+  (interactive)
+  (let ((index (get-char-property (point) 'buku-index)))
+    (if index
+        (save-excursion
+          (goto-char (1+ (previous-single-property-change (point) 'buku-index)))
+          (forward-line)
+          (goto-char (next-single-property-change (point) 'data))
+          (browse-url-at-point))
+      (user-error "No bookmark at point"))))
+
 (defun ebuku-refresh ()
   "Refresh the list of search results, based on last search."
   (interactive)
@@ -569,10 +595,12 @@ the type of search to be performed."
         (insert (propertize
                  (concat
                   "\n"
+                  " 'RET' to open bookmark in browser;\n"
+                  " 's' to search; 'r' to show recent additions;\n"
+                  " 'g' to refresh results;\n"
                   " 'a' to add a bookmark; 'd' to delete a bookmark;\n"
                   " 'e' to edit a bookmark;\n"
-                  " 's' to search; 'r' to show recent additions;\n"
-                  " 'g' to refresh results; 'q' to quit.\n"
+                  " 'q' to quit.\n"
                   "\n")
                  'face 'ebuku-help-face))
         (insert (propertize

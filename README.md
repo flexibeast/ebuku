@@ -25,6 +25,14 @@ Create an EBuku buffer with <kbd>M-x ebuku</kbd>.
 
 In the `*EBuku*` buffer, the following bindings are available:
 
+* <kbd>s</kbd> - Search for a bookmark (`ebuku-search`).
+
+* <kbd>r</kbd> - Show recently-added bookmarks (`ebuku-search-on-recent`).
+
+* <kbd>g</kbd> - Refresh the search results, based on last search (`ebuku-refresh`).
+
+* <kbd>RET</kbd> - Open the bookmark at point in a browser (`ebuku-open-url`).
+
 * <kbd>a</kbd> - Add a new bookmark (`ebuku-add-bookmark`).
 
 * <kbd>d</kbd> - Delete a bookmark (`ebuku-delete-bookmark`).  If point is on
@@ -34,12 +42,6 @@ In the `*EBuku*` buffer, the following bindings are available:
 * <kbd>e</kbd> - Edit a bookmark (`ebuku-edit-bookmark`).  If point is on a
   bookmark, edit that bookmark; otherwise, ask for the index of the
   bookmark to edit.
-
-* <kbd>s</kbd> - Search for a bookmark (`ebuku-search`).
-
-* <kbd>r</kbd> - Show recently-added bookmarks (`ebuku-search-on-recent`).
-
-* <kbd>g</kbd> - Refresh the search results, based on last search (`ebuku-refresh`).
 
 * <kbd>q</kbd> - Quit EBuku.
 
