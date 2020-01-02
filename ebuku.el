@@ -119,7 +119,9 @@
   "Emacs interface to the Buku bookmark manager."
   :group 'external)
 
-(defcustom ebuku-buku-path "/bin/buku"
+(defcustom ebuku-buku-path (if (eq system-type 'windows-nt)
+                               "buku"
+                             "/bin/buku")
   "Absolute path of the `buku' executable."
   :type '(file :must-match t)
   :group 'ebuku)
