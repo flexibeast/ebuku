@@ -1,3 +1,5 @@
+# ebuku - Interface to the Buku Web bookmark manager
+
 *Author:* Alexis <flexibeast@gmail.com><br>
 *Version:* 0<br>
 
@@ -81,7 +83,7 @@ including:
 ## License
 
 [GNU General Public License version
-3](http://www.gnu.org/licenses/gpl.html), or (at your option) any
+3](https://www.gnu.org/licenses/gpl.html), or (at your option) any
 later version.
 
 
