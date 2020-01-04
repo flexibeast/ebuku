@@ -1,6 +1,7 @@
+
 ;;; ebuku.el --- Interface to the Buku Web bookmark manager -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2019  Alexis <flexibeast@gmail.com>
+;; Copyright (C) 2019-2020  Alexis <flexibeast@gmail.com>
 
 ;; Author: Alexis <flexibeast@gmail.com>
 ;; Maintainer: Alexis <flexibeast@gmail.com>
