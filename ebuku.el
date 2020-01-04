@@ -45,7 +45,8 @@
 
 ;; ## Installation
 
-;; Put the `ebuku' folder in your load-path and do a `(load "ebuku")'.
+;; Install [EBuku from MELPA](https://melpa.org/#/ebuku), or put the
+;; `ebuku' folder in your load-path and do a `(load "ebuku")'.
 
 ;; ## Usage
 
