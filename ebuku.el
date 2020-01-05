@@ -58,6 +58,10 @@
 
 ;; * `r' - Show recently-added bookmarks (`ebuku-search-on-recent').
 
+;; * `*' - Show all bookmarks (`ebuku-show-all').
+
+;; * `-' - Toggle results limit (`ebuku-toggle-results-limit').
+
 ;; * `g' - Refresh the search results, based on last search (`ebuku-refresh').
 
 ;; * `RET' - Open the bookmark at point in a browser (`ebuku-open-url').
@@ -76,9 +80,17 @@
 
 ;; ## Customisation
 
-;; The path to the `buku' executable, the number of bookmarks shown by
-;; `ebuku-search-on-recent', and the faces used by EBuku, can be
-;; customised via the `ebuku' customize-group.
+;; The `ebuku' customize-group can be used to customise:
+
+;; * the path to the `buku' executable;
+
+;; * the number of recently-added bookmarks to show;
+
+;; * which bookmarks to show on startup;
+
+;; * the maximum number of bookmarks to show; and
+
+;; * the faces used by EBuku.
 
 ;; ## TODO
 
@@ -130,6 +142,16 @@
   :type '(file :must-match t)
   :group 'ebuku)
 
+(defcustom ebuku-display-on-startup 'all
+  "What to display in the search results area on startup.
+
+Specify `\\='all' for all bookmarks; `\\='recent' for recent additions; or
+`nil' for no bookmarks."
+  :type '(radio (const :tag "All bookmarks" all)
+                (const :tag "Recent additions" recent)
+                (const :tag "No bookmarks" nil))
+  :group 'ebuku)
+
 (defcustom ebuku-mode-hook nil
   "Functions to run when starting `ebuku-mode'."
   :type '(repeat function)
@@ -139,6 +161,14 @@
   "Number of recently-added bookmarks to show."
   :type 'integer
   :group 'ebuku)
+
+(defcustom ebuku-results-limit 1000
+  "Maximum number of bookmarks to show.
+
+Set this variable to 0 for no maximum."
+  :type 'integer
+  :group 'ebuku)
+
 
 (defgroup ebuku-faces nil
   "Faces for `ebuku-mode'."
@@ -206,6 +236,8 @@
     (define-key km (kbd "g") #'ebuku-refresh)
     (define-key km (kbd "r") #'ebuku-search-on-recent)
     (define-key km (kbd "s") #'ebuku-search)
+    (define-key km (kbd "*") #'ebuku-show-all)
+    (define-key km (kbd "-") #'ebuku-toggle-results-limit)
     (define-key km (kbd "<RET>") #'ebuku-open-url)
     (define-key km [mouse-1] #'ebuku-open-url)
     (define-key km [mouse-2] #'ebuku-open-url)
@@ -218,6 +250,9 @@
 
 (defvar ebuku--last-search nil
   "Internal variable containing the parameters of the last search.")
+
+(defvar ebuku--last-results-limit 0
+  "Internal variable for use by `ebuku-toggle-results-limit'.")
 
 (defvar ebuku--results-start nil
   "Internal variable containing buffer location of start of search results.")
@@ -240,6 +275,8 @@
     '("EBuku"
       ["Search" (ebuku-search) :keys "s"]
       ["Recent" (ebuku-search-on-recent) :keys "r"]
+      ["Show all" (ebuku-show-all) :keys "*"]
+      ["Toggle results limit" (ebuku-toggle-results-limit) :keys "-"]
       ["Refresh" (ebuku-refresh) :keys "g"]
       ["Open bookmark" (ebuku-open-url) :keys "RET"]
       "---"
@@ -302,6 +339,16 @@ Argument EVENT is the event received from that process."
         (error (concat "Failed to get bookmark data for index " index))))
     `((title . ,title) (url . ,url) (comment . ,comment) (tags ,tags))))
 
+(defun ebuku--get-bookmark-count ()
+  "Internal function to get the number of bookmarks in the Buku database."
+  (with-temp-buffer
+    (if (ebuku--call-buku `("--print" "-1"))
+        (progn
+          (goto-char (point-min))
+          (re-search-forward "^\\([[:digit:]]+\\)\\.")
+          (match-string 1))
+      (error "Failed to get bookmark count"))))
+
 (defun ebuku--search-helper (type prompt &optional term exclude)
   "Internal function to call `buku' with appropriate search arguments.
 
@@ -342,7 +389,11 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
         (ebuku--call-buku `(,type ,term "--exclude" ,exclude)))
       (setq ebuku--last-search `(,type ,prompt ,term ,exclude))
       (if (string= "--print" type)
-          (setq count (number-to-string ebuku-recent-count))
+          (cond
+           ((string= "[recent]" prompt)
+            (setq count (number-to-string ebuku-recent-count)))
+           ((string= "[all]" prompt)
+            (setq count (ebuku--get-bookmark-count))))
         (if (re-search-backward "^\\([[:digit:]]+\\)\\." nil t)
             (setq count (match-string 1))
           (setq count "0")))
@@ -353,11 +404,31 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
           (kill-region (point) (point-max))
           (cond
            ((string= "0" count)
-            (insert (concat " No results found for '" search "'.\n\n")))
+            (insert (concat "  No results found for '" search "'.\n\n")))
            ((string= "1" count)
-            (insert (concat " Found 1 result for '" search "'.\n\n")))
+            (insert (concat "  Found 1 result for '" search "'.\n\n")))
            (t
-            (insert (concat " Found " count " results for '" search "'.\n\n"))))))
+            (progn
+              (if (or (< (string-to-number count) ebuku-results-limit)
+                      (= 0 ebuku-results-limit))
+                  (insert (concat "  Found "
+                                  count
+                                  " results for '"
+                                  search
+                                  "'.\n\n"))
+                (if (> (string-to-number count) ebuku-results-limit)
+                    (progn
+                      (insert (concat "  Found "
+                                      (number-to-string ebuku-results-limit)
+                                      " results for '"
+                                      search
+                                      "'.\n"))
+                      (insert (concat "  (Omitted "
+                                      (number-to-string
+                                       (- (string-to-number count)
+                                          ebuku-results-limit))
+                                      " results due to non-zero value\n"
+                                      "   of 'ebuku-results-limit'.)\n\n"))))))))))
       (unless (string= "0" count)
         (while (re-search-forward title-line-re nil t)
           (if (string= "--print" type)
@@ -394,7 +465,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                   (setq tags (match-string 1 line)))))
           (with-current-buffer "*EBuku*"
             (let ((inhibit-read-only t))
-              (insert (propertize " --  "
+              (insert (propertize "  --  "
                                   'buku-index index)
                       (propertize title
                                   'buku-index index
@@ -402,7 +473,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                                   'face 'ebuku-title-face)
                       (propertize "\n"
                                   'buku-index index)
-                      (propertize "     "
+                      (propertize "      "
                                   'buku-index index)
                       (propertize url
                                   'buku-index index
@@ -414,7 +485,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                                   'buku-index index))
               (unless (string= "" comment)
                 (insert
-                 (propertize "     "
+                 (propertize "      "
                              'buku-index index)
                  (propertize comment
                              'buku-index index
@@ -424,7 +495,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                              'buku-index index)))
               (unless (string= "" tags)
                 (insert
-                 (propertize "     "
+                 (propertize "      "
                              'buku-index index)
                  (propertize tags
                              'buku-index index
@@ -529,7 +600,16 @@ otherwise, ask for the index of the bookmark to edit."
   "Refresh the list of search results, based on last search."
   (interactive)
   (if ebuku--last-search
-      (apply #'ebuku--search-helper ebuku--last-search)))
+      (let ((term (nth 2 ebuku--last-search)))
+        (if (and (not (string= "[recent]" (nth 1 ebuku--last-search)))
+                 (string-match "^-\\([[:digit:]]+\\)$" term))
+            (let ((count (string-to-number (match-string 1 term))))
+              (if (/= count ebuku-results-limit)
+                  (setf (nth 2 ebuku--last-search)
+                        (concat "-"
+                                (number-to-string ebuku-results-limit))))
+              (apply #'ebuku--search-helper ebuku--last-search))
+          (apply #'ebuku--search-helper ebuku--last-search)))))
 
 (defun ebuku-search (char)
   "Search the Buku database for bookmarks.
@@ -554,10 +634,10 @@ the type of search to be performed."
   (ebuku--search-helper "--sany" "Keyword? "))
 
 (defun ebuku-search-on-recent ()
-  "Do a `buku' search using '--print' to get recently-added bookmarks."
+  "Do a `buku' search for recently-added bookmarks."
   (interactive)
   (ebuku--search-helper "--print"
-                        "_" ; We don't need to prompt the user in this case.
+                        "[recent]" ; Dummy prompt to indicate prefab 'search'
                         (concat "-"
                                 (number-to-string ebuku-recent-count))
                         ""))
@@ -571,6 +651,29 @@ the type of search to be performed."
   "Do a `buku' search using '--stag'."
   (interactive)
   (ebuku--search-helper "--stag" "Tag? "))
+
+(defun ebuku-show-all ()
+  "Do a `buku' search for as many bookmarks as possible.
+
+The maximum number of bookmarks to show is specified by
+`ebuku-results-limit'."
+  (interactive)
+  (ebuku--search-helper "--print"
+                        "[all]" ; Dummy prompt to indicate prefab 'search'
+                        (concat "-"
+                                (number-to-string ebuku-results-limit))
+                        ""))
+
+(defun ebuku-toggle-results-limit ()
+  "Toggle whether to limit results to `ebuku-results-limit'."
+  (interactive)
+  (if (> ebuku-results-limit 0)
+      (progn
+        (setq ebuku--last-results-limit ebuku-results-limit)
+        (setq ebuku-results-limit 0))
+    (setq ebuku-results-limit ebuku--last-results-limit))
+  (ebuku-refresh))
+
 
 ;;;###autoload
 (define-derived-mode ebuku-mode special-mode "EBuku"
@@ -590,26 +693,21 @@ the type of search to be performed."
       (setq ebuku--last-search nil)
       (with-current-buffer (generate-new-buffer "*EBuku*")
         (goto-char (point-min))
-        (insert "\n ")
+        (insert "\n")
         (insert (propertize
-                 "EBuku\n"
+                 " EBuku\n"
                  'face 'ebuku-heading-face))
         (insert (propertize
-                 (concat
-                  "\n"
-                  " 'RET' to open bookmark in browser;\n"
-                  " 's' to search; 'r' to show recent additions;\n"
-                  " 'g' to refresh results;\n"
-                  " 'a' to add a bookmark; 'd' to delete a bookmark;\n"
-                  " 'e' to edit a bookmark;\n"
-                  " 'q' to quit.\n"
-                  "\n")
-                 'face 'ebuku-help-face))
-        (insert (propertize
-                 " ------------------------------------------------\n\n"
+                 "  ----------\n\n"
                  'face 'ebuku-separator-face))
         (setq ebuku--results-start (point))
-        (insert " [ Please specify a search, or press 'r' for recent additions. ]")
+        (cond
+         ((eq 'all ebuku-display-on-startup)
+          (ebuku-show-all))
+         ((eq 'recent ebuku-display-on-startup)
+          (ebuku-search-on-recent))
+         ((eq nil ebuku-display-on-startup)
+          (insert "  [ Please specify a search, or press 'r' for recent additions. ]")))
         (goto-char ebuku--results-start)
         (add-text-properties (point-min) (point)
                              '(read-only t intangible t))

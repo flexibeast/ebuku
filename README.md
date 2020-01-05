@@ -32,6 +32,10 @@ In the `*EBuku*` buffer, the following bindings are available:
 
 * <kbd>r</kbd> - Show recently-added bookmarks (`ebuku-search-on-recent`).
 
+* <kbd>*</kbd> - Show all bookmarks (`ebuku-show-all`).
+
+* <kbd>-</kbd> - Toggle results limit (`ebuku-toggle-results-limit`).
+
 * <kbd>g</kbd> - Refresh the search results, based on last search (`ebuku-refresh`).
 
 * <kbd>RET</kbd> - Open the bookmark at point in a browser (`ebuku-open-url`).
@@ -50,9 +54,17 @@ In the `*EBuku*` buffer, the following bindings are available:
 
 ## Customisation
 
-The path to the `buku` executable, the number of bookmarks shown by
-`ebuku-search-on-recent`, and the faces used by EBuku, can be
-customised via the `ebuku` customize-group.
+The `ebuku` customize-group can be used to customise:
+
+* the path to the `buku` executable;
+
+* the number of recently-added bookmarks to show;
+
+* which bookmarks to show on startup;
+
+* the maximum number of bookmarks to show; and
+
+* the faces used by EBuku.
 
 ## TODO
 
