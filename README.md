@@ -40,6 +40,10 @@ In the `*EBuku*` buffer, the following bindings are available:
 
 * <kbd>RET</kbd> - Open the bookmark at point in a browser (`ebuku-open-url`).
 
+* <kbd>n</kbd> - Move point to the next bookmark URL (`ebuku-next-bookmark`).
+
+* <kbd>p</kbd> - Move point to the previous bookmark URL (`ebuku-previous-bookmark`).
+
 * <kbd>a</kbd> - Add a new bookmark (`ebuku-add-bookmark`).
 
 * <kbd>d</kbd> - Delete a bookmark (`ebuku-delete-bookmark`).  If point is on

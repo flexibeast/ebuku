@@ -66,6 +66,10 @@
 
 ;; * `RET' - Open the bookmark at point in a browser (`ebuku-open-url').
 
+;; * `n' - Move point to the next bookmark URL (`ebuku-next-bookmark').
+
+;; * `p' - Move point to the previous bookmark URL (`ebuku-previous-bookmark').
+
 ;; * `a' - Add a new bookmark (`ebuku-add-bookmark').
 
 ;; * `d' - Delete a bookmark (`ebuku-delete-bookmark').  If point is on
@@ -234,6 +238,8 @@ Set this variable to 0 for no maximum."
     (define-key km (kbd "d") #'ebuku-delete-bookmark)
     (define-key km (kbd "e") #'ebuku-edit-bookmark)
     (define-key km (kbd "g") #'ebuku-refresh)
+    (define-key km (kbd "n") #'ebuku-next-bookmark)
+    (define-key km (kbd "p") #'ebuku-previous-bookmark)
     (define-key km (kbd "r") #'ebuku-search-on-recent)
     (define-key km (kbd "s") #'ebuku-search)
     (define-key km (kbd "*") #'ebuku-show-all)
@@ -278,7 +284,10 @@ Set this variable to 0 for no maximum."
       ["Show all" (ebuku-show-all) :keys "*"]
       ["Toggle results limit" (ebuku-toggle-results-limit) :keys "-"]
       ["Refresh" (ebuku-refresh) :keys "g"]
+      "---"
       ["Open bookmark" (ebuku-open-url) :keys "RET"]
+      ["Next bookmark" (ebuku-next-bookmark) :keys "n"]
+      ["Previous bookmark" (ebuku-previous-bookmark) :keys "p"]
       "---"
       ["Add bookmark" (ebuku-add-bookmark) :keys "a"]
       ["Delete bookmark" (ebuku-delete-bookmark) :keys "d"]
@@ -584,6 +593,13 @@ otherwise, ask for the index of the bookmark to edit."
                   (error "Failed to update bookmark")))))
         (error (concat "Failed to get bookmark data for index " index))))))
 
+(defun ebuku-next-bookmark ()
+  "Move point to the next bookmark URL."
+  (interactive)
+  (re-search-forward "^\\s-+http" nil t 1)
+  (beginning-of-line)
+  (re-search-forward "^\\s-+" nil t 1))
+
 (defun ebuku-open-url ()
   "Open the URL for the bookmark at point."
   (interactive)
@@ -595,6 +611,13 @@ otherwise, ask for the index of the bookmark to edit."
           (goto-char (next-single-property-change (point) 'data))
           (browse-url-at-point))
       (user-error "No bookmark at point"))))
+
+(defun ebuku-previous-bookmark ()
+  "Move point to the previous bookmark URL."
+  (interactive)
+  (re-search-forward "^\\s-+http" nil t -1)
+  (beginning-of-line)
+  (re-search-forward "^\\s-+" nil t 1))
 
 (defun ebuku-refresh ()
   "Refresh the list of search results, based on last search."
