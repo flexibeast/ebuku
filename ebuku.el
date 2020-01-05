@@ -446,10 +446,10 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                        (line-end-position))))
             ;; If this line not empty, it's either a comment or tags.
             (if (not (string= "" line))
-                (if (string-match "^\\s-*[+]" line)
+                (if (string-match "^\\s-+[+]" line)
                     ;; It's a comment.
                     (progn
-                      (string-match "^\\s-*[+] \\(.+\\)$" line)
+                      (string-match "^\\s-+[+] \\(.+\\)$" line)
                       (setq comment (match-string 1 line))
                       (forward-line)
                       (let ((line (buffer-substring
@@ -458,7 +458,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                         (if (not (string= "" line))
                             ;; Line isn't empty, so it must contain tags.
                             (progn
-                              (string-match "^\\s-*[#] \\(.+\\)$" line)
+                              (string-match "^\\s-+[#] \\(.+\\)$" line)
                               (setq tags (match-string 1 line))))))
                   ;; It's tags.
                   (string-match "^\\s-*[#] \\(.+\\)$" line)
