@@ -354,8 +354,9 @@ Argument EVENT is the event received from that process."
     (if (ebuku--call-buku `("--print" "-1"))
         (progn
           (goto-char (point-min))
-          (re-search-forward "^\\([[:digit:]]+\\)\\.")
-          (match-string 1))
+          (if (re-search-forward "^\\([[:digit:]]+\\)\\." nil t)
+              (match-string 1)
+            "0"))
       (error "Failed to get bookmark count"))))
 
 (defun ebuku--search-helper (type prompt &optional term exclude)
