@@ -1,5 +1,4 @@
-
-;;; ebuku.el --- Interface to the Buku Web bookmark manager -*- lexical-binding: t; -*-
+;;; ebuku.el --- Interface to the buku Web bookmark manager -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019-2020  Alexis <flexibeast@gmail.com>
 
@@ -31,8 +30,8 @@
 
 ;;; Commentary:
 
-;; EBuku provides a basic interface to the
-;; [Buku](https://github.com/jarun/Buku) Web bookmark manager.
+;; Ebuku provides a basic interface to the
+;; [buku](https://github.com/jarun/buku) Web bookmark manager.
 
 ;; ## Table of Contents
 
@@ -45,14 +44,14 @@
 
 ;; ## Installation
 
-;; Install [EBuku from MELPA](https://melpa.org/#/ebuku), or put the
+;; Install [Ebuku from MELPA](https://melpa.org/#/ebuku), or put the
 ;; `ebuku' folder in your load-path and do a `(load "ebuku")'.
 
 ;; ## Usage
 
-;; Create an EBuku buffer with `M-x ebuku'.
+;; Create an Ebuku buffer with `M-x ebuku'.
 
-;; In the `*EBuku*' buffer, the following bindings are available:
+;; In the `*Ebuku*' buffer, the following bindings are available:
 
 ;; * `s' - Search for a bookmark (`ebuku-search').
 
@@ -80,7 +79,7 @@
 ;;   bookmark, edit that bookmark; otherwise, ask for the index of the
 ;;   bookmark to edit.
 
-;; * `q' - Quit EBuku.
+;; * `q' - Quit Ebuku.
 
 ;; ## Customisation
 
@@ -94,11 +93,11 @@
 
 ;; * the maximum number of bookmarks to show; and
 
-;; * the faces used by EBuku.
+;; * the faces used by Ebuku.
 
 ;; ## TODO
 
-;; * One should be able to edit bookmarks directly in the `*EBuku*'
+;; * One should be able to edit bookmarks directly in the `*Ebuku*'
 ;;   buffer, à la `wdired'.  Much of the infrastructure to support this
 ;;   is already in place, but there are still important details yet to
 ;;   be implemented.
@@ -107,7 +106,7 @@
 
 ;; ## Issues / bugs
 
-;; If you discover an issue or bug in EBuku not already
+;; If you discover an issue or bug in Ebuku not already
 ;; noted:
 
 ;; * as a TODO item, or
@@ -121,7 +120,7 @@
 ;; * which version of Emacs you're running on which operating system,
 ;;   and
 
-;; * how you installed EBuku.
+;; * how you installed Ebuku.
 
 ;; ## License
 
@@ -136,7 +135,7 @@
 ;;
 
 (defgroup ebuku nil
-  "Emacs interface to the Buku bookmark manager."
+  "Emacs interface to the buku bookmark manager."
   :group 'external)
 
 (defcustom ebuku-buku-path (if (eq system-type 'windows-nt)
@@ -181,50 +180,50 @@ Set this variable to 0 for no maximum."
 (defface ebuku-comment-face
   '((t
      :inherit default))
-  "Face for *EBuku* bookmark comments."
+  "Face for *Ebuku* bookmark comments."
   :group 'ebuku-faces)
 
 (defface ebuku-heading-face
   '((t
      :height 2.0
      :weight bold))
-  "Face for *EBuku* headings."
+  "Face for *Ebuku* headings."
   :group 'ebuku-faces)
 
 (defface ebuku-help-face
   '((t
      :inherit default))
-  "Face for *EBuku* help text."
+  "Face for *Ebuku* help text."
   :group 'ebuku-faces)
 
 (defface ebuku-separator-face
   '((t
      :inherit default))
-  "Face for *EBuku* separators."
+  "Face for *Ebuku* separators."
   :group 'ebuku-faces)
 
 (defface ebuku-tags-face
   '((t
      :inherit default))
-  "Face for *EBuku* bookmark tags."
+  "Face for *Ebuku* bookmark tags."
   :group 'ebuku-faces)
 
 (defface ebuku-title-face
   '((t
      :inherit default))
-  "Face for *EBuku* bookmark titles."
+  "Face for *Ebuku* bookmark titles."
   :group 'ebuku-faces)
 
 (defface ebuku-url-face
   '((t
      :inherit link))
-  "Face for *EBuku* bookmark URLs."
+  "Face for *Ebuku* bookmark URLs."
   :group 'ebuku-faces)
 
 (defface ebuku-url-highlight-face
   '((t
      :inherit highlight))
-  "Face for highlighting *EBuku* bookmark URLs."
+  "Face for highlighting *Ebuku* bookmark URLs."
   :group 'ebuku-faces)
 
 
@@ -277,8 +276,8 @@ Set this variable to 0 for no maximum."
 
 (defun ebuku--create-mode-menu ()
   "Internal function to create the `ebuku-mode' menu."
-  (easy-menu-define ebuku--menu ebuku-mode-map "Menu bar entry for EBuku"
-    '("EBuku"
+  (easy-menu-define ebuku--menu ebuku-mode-map "Menu bar entry for Ebuku"
+    '("Ebuku"
       ["Search" (ebuku-search) :keys "s"]
       ["Recent" (ebuku-search-on-recent) :keys "r"]
       ["Show all" (ebuku-show-all) :keys "*"]
@@ -297,11 +296,11 @@ Set this variable to 0 for no maximum."
       ["Quit" (kill-buffer) :keys "q"])))
 
 (defun ebuku--delete-bookmark-helper (index)
-  "Internal function to delete the Buku bookmark at INDEX.
+  "Internal function to delete the buku bookmark at INDEX.
 
-Buku doesn't provide a `--force' option for `--delete'; instead,
+buku doesn't provide a `--force' option for `--delete'; instead,
 it always prompts the user for confirmation.  This function starts
-an asychrononous Buku process to delete the bookmark, to which we
+an asychrononous buku process to delete the bookmark, to which we
 can then send 'y' to confirm.  (The user will have already been
 prompted for confirmation by the \\[ebuku-delete-bookmark] command.)"
   (let ((proc (start-process
@@ -312,9 +311,9 @@ prompted for confirmation by the \\[ebuku-delete-bookmark] command.)"
     (process-send-string proc "y\n")))
 
 (defun ebuku--delete-bookmark-sentinel (_proc event)
-  "Internal function to wait for Buku to complete bookmark deletion.
+  "Internal function to wait for buku to complete bookmark deletion.
 
-Argument PROC is the Buku process started by `ebuku--delete-bookmark-helper'.
+Argument PROC is the buku process started by `ebuku--delete-bookmark-helper'.
 
 Argument EVENT is the event received from that process."
   (if (string= "finished\n" event)
@@ -324,7 +323,7 @@ Argument EVENT is the event received from that process."
     (error "Failed to delete bookmark")))
 
 (defun ebuku--get-index-at-point ()
-  "Internal function to get the Buku index of the bookmark at point."
+  "Internal function to get the buku index of the bookmark at point."
   (get-char-property (point) 'buku-index))
 
 (defun ebuku--get-bookmark-at-index (index)
@@ -349,7 +348,7 @@ Argument EVENT is the event received from that process."
     `((title . ,title) (url . ,url) (comment . ,comment) (tags ,tags))))
 
 (defun ebuku--get-bookmark-count ()
-  "Internal function to get the number of bookmarks in the Buku database."
+  "Internal function to get the number of bookmarks in the buku database."
   (with-temp-buffer
     (if (ebuku--call-buku `("--print" "-1"))
         (progn
@@ -362,7 +361,7 @@ Argument EVENT is the event received from that process."
 (defun ebuku--search-helper (type prompt &optional term exclude)
   "Internal function to call `buku' with appropriate search arguments.
 
-Argument TYPE is a string: the type of Buku search.
+Argument TYPE is a string: the type of buku search.
 
 Argument PROMPT is a string: the minibuffer prompt for that search.
 
@@ -408,7 +407,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
             (setq count (match-string 1))
           (setq count "0")))
       (goto-char (point-min))
-      (with-current-buffer "*EBuku*"
+      (with-current-buffer "*Ebuku*"
         (let ((inhibit-read-only t))
           (goto-char ebuku--results-start)
           (kill-region (point) (point-max))
@@ -473,7 +472,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                   ;; It's tags.
                   (string-match "^\\s-*[#] \\(.+\\)$" line)
                   (setq tags (match-string 1 line)))))
-          (with-current-buffer "*EBuku*"
+          (with-current-buffer "*Ebuku*"
             (let ((inhibit-read-only t))
               (insert (propertize "  --  "
                                   'buku-index index)
@@ -516,7 +515,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
               (insert "\n")))
           (setq comment ""
                 tags ""))
-        (with-current-buffer "*EBuku*"
+        (with-current-buffer "*Ebuku*"
           (goto-char (point-min))
           (goto-char ebuku--results-start)
           (forward-line 2))))))
@@ -527,7 +526,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
 ;;
 
 (defun ebuku-add-bookmark ()
-  "Add a bookmark to the Buku database."
+  "Add a bookmark to the buku database."
   (interactive)
   (let ((title (read-from-minibuffer "Bookmark title? "))
         (url (read-from-minibuffer "Bookmark URL? "))
@@ -544,7 +543,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
         (error "Failed to add bookmark")))))
 
 (defun ebuku-delete-bookmark ()
-  "Delete a bookmark from the Buku database.
+  "Delete a bookmark from the buku database.
 
 If point is on a bookmark, offer to delete that bookmark;
 otherwise, ask for the index of the bookmark to delete."
@@ -560,7 +559,7 @@ otherwise, ask for the index of the bookmark to delete."
       (error (concat "Failed to get bookmark data for index " index)))))
 
 (defun ebuku-edit-bookmark ()
-  "Edit a bookmark in the Buku database.
+  "Edit a bookmark in the buku database.
 
 If point is on a bookmark, offer to edit that bookmark;
 otherwise, ask for the index of the bookmark to edit."
@@ -636,7 +635,7 @@ otherwise, ask for the index of the bookmark to edit."
           (apply #'ebuku--search-helper ebuku--last-search)))))
 
 (defun ebuku-search (char)
-  "Search the Buku database for bookmarks.
+  "Search the buku database for bookmarks.
 
 Argument CHAR is the character selected by the user to specify
 the type of search to be performed."
@@ -700,8 +699,8 @@ The maximum number of bookmarks to show is specified by
 
 
 ;;;###autoload
-(define-derived-mode ebuku-mode special-mode "EBuku"
-  "Major mode for interacting with the Buku bookmark manager.
+(define-derived-mode ebuku-mode special-mode "Ebuku"
+  "Major mode for interacting with the buku bookmark manager.
 
 \\{ebuku-mode-map}"
   :group 'ebuku)
@@ -709,17 +708,17 @@ The maximum number of bookmarks to show is specified by
 
 ;;;###autoload
 (defun ebuku ()
-  "Start EBuku, an interface to the Buku bookmark manager."
+  "Start Ebuku, an interface to the buku bookmark manager."
   (interactive)
-  (if (get-buffer "*EBuku*")
-      (switch-to-buffer "*EBuku*")
+  (if (get-buffer "*Ebuku*")
+      (switch-to-buffer "*Ebuku*")
     (progn
       (setq ebuku--last-search nil)
-      (with-current-buffer (generate-new-buffer "*EBuku*")
+      (with-current-buffer (generate-new-buffer "*Ebuku*")
         (goto-char (point-min))
         (insert "\n")
         (insert (propertize
-                 " EBuku\n"
+                 " Ebuku\n"
                  'face 'ebuku-heading-face))
         (insert (propertize
                  "  ----------\n\n"
@@ -738,7 +737,7 @@ The maximum number of bookmarks to show is specified by
         (ebuku--create-mode-menu)
         (setq header-line-format nil)
         (ebuku-mode))
-      (switch-to-buffer "*EBuku*"))))
+      (switch-to-buffer "*Ebuku*"))))
 
 
 ;; --
