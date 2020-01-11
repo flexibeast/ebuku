@@ -630,14 +630,9 @@ as Ivy or Helm.
 The format of each entry in the list is determined by the variable
 `ebuku-gather-bookmarks-format'."
   (interactive)
-  (let ((bookmarks '()))
-    (with-temp-buffer
-      (ebuku--call-buku `("--print" "--format" ,ebuku-gather-bookmarks-format))
-      (goto-char (point-min))
-      (forward-line 1)
-      (while (re-search-forward "^\\(.+\\)$" nil t)
-        (setq bookmarks (append bookmarks (list (match-string 1))))))
-    (setq ebuku-bookmarks bookmarks)))
+  (with-temp-buffer
+    (ebuku--call-buku `("--print" "--format" ,ebuku-gather-bookmarks-format))
+    (setq ebuku-bookmarks (cdr (split-string (buffer-string) "\n")))))
 
 (defun ebuku-next-bookmark ()
   "Move point to the next bookmark URL."
