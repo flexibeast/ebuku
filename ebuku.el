@@ -197,6 +197,11 @@ Set this variable to 0 for no maximum."
   :type 'integer
   :group 'ebuku)
 
+(defcustom ebuku-cache-default-args '("--print")
+  "Default arguments to `ebuku-update-cache'."
+  :type '(repeat string)
+  :group 'ebuku)
+
 
 (defgroup ebuku-faces nil
   "Faces for `ebuku-mode'."
@@ -254,7 +259,7 @@ Set this variable to 0 for no maximum."
 
 ;;
 ;; Keymaps.
-;; 
+;;
 
 (defvar ebuku-mode-map
   (let ((km (make-sparse-keymap)))
@@ -382,6 +387,51 @@ Argument EVENT is the event received from that process."
               (match-string 1)
             "0"))
       (error "Failed to get bookmark count"))))
+
+(defun ebuku-gather-bookmarks (&optional type term exclude)
+  "Return a list of bookmarks.
+Each bookmark is an alist with the keys 'title 'url 'index 'tags 'comment
+The bookmarks is fetched from buku with the following arguments:
+
+  - TYPE (string): the type of Buku search (default \"--print\").
+  - TERM (string): what to search for.
+  - EXCLUDE (string): keywords to exclude from the search results."
+  (let ((results)
+        (type (or type "--print"))
+        (title-line-re
+         (concat
+          ;; Result number, or index number when using '--print'.
+          "^\\([[:digit:]]+\\)\\. "
+          ;; Title.
+          "\\(.+?\\)"
+          ;; Index number when not using '--print'.
+          "\\(?: \\[\\([[:digit:]]+\\)\\]\\)?\n")))
+    (with-temp-buffer
+      (ebuku--call-buku
+       (remq nil
+             `(,type ,term ,@(when (and exclude (not (string-empty-p exclude)))
+                               `("--exclude" ,exclude)))))
+      (goto-char (point-min))
+      (while (re-search-forward title-line-re nil t)
+        (let ((data))
+          (if (or (string= "--print" type)
+                  (string= "-p" type))
+              (progn
+                (map-put data 'index (match-string 1))
+                (map-put data 'title (match-string 2)))
+            (map-put data 'title (match-string 2))
+            (map-put data 'index (match-string 3)))
+          (re-search-forward "^\\s-+> \\([^\n]+\\)") ; URL
+          (map-put data 'url (match-string 1))
+          (forward-line)
+          (when (looking-at "^\\s-+[+] \\(.+\\)$")
+            (map-put data 'comment (match-string 1))
+            (forward-line))
+          (when (looking-at "^\\s-+[#] \\(.+\\)$")
+            (map-put data 'tags (split-string (match-string 1) "," t)))
+          (push data results)))
+      results)))
+
 
 (defun ebuku--search-helper (type prompt &optional term exclude)
   "Internal function to call `buku' with appropriate search arguments.
@@ -545,18 +595,16 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
           (goto-char ebuku--results-start)
           (forward-line 2))))))
 
-
 ;;
 ;; User-facing variables.
 ;;
 
+
 (defvar ebuku-bookmarks '()
   "Cache of bookmarks in the buku database.
 
-This cache is populated by the `ebuku-gather-bookmarks' function,
-with each entry having the format specified by the
-`ebuku-gather-bookmarks-format' variable.")
-
+This cache is populated by the `ebuku-update-cache' command.
+Each bookmark is an alist with the keys 'title 'url 'index 'tags 'comment.")
 
 ;;
 ;; User-facing functions.
@@ -630,18 +678,16 @@ otherwise, ask for the index of the bookmark to edit."
                   (error "Failed to update bookmark")))))
         (error (concat "Failed to get bookmark data for index " index))))))
 
-(defun ebuku-gather-bookmarks ()
-  "Return a list of all available bookmarks.
-
-This function is intended for use by completion frameworks, such
-as Ivy or Helm.
-
-The format of each entry in the list is determined by the variable
-`ebuku-gather-bookmarks-format'."
+(defun ebuku-update-cache (&optional type term exclude)
+  "Repopulate `ebuku-bookmarks'.
+The arguments TYPE, TERM, and EXCLUDE are sent to `ebuku-gather-bookmarks'.
+If an argument is excluded, get it from `ebuku-cache-default-args'."
   (interactive)
-  (with-temp-buffer
-    (ebuku--call-buku `("--print" "--format" ,ebuku-gather-bookmarks-format))
-    (setq ebuku-bookmarks (cdr (split-string (buffer-string) "\n")))))
+  (setq ebuku-bookmarks
+        (ebuku-gather-bookmarks
+         (or type (nth 0 ebuku-cache-default-args))
+         (or term (nth 1 ebuku-cache-default-args))
+         (or exclude (nth 2 ebuku-cache-default-args)))))
 
 (defun ebuku-next-bookmark ()
   "Move point to the next bookmark URL."
