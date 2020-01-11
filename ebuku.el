@@ -139,9 +139,7 @@
   "Emacs interface to the Buku bookmark manager."
   :group 'external)
 
-(defcustom ebuku-buku-path (if (eq system-type 'windows-nt)
-                               "buku"
-                             "/bin/buku")
+(defcustom ebuku-buku-path (executable-find "buku")
   "Absolute path of the `buku' executable."
   :type '(file :must-match t)
   :group 'ebuku)
@@ -230,7 +228,7 @@ Set this variable to 0 for no maximum."
 
 ;;
 ;; Keymaps.
-;; 
+;;
 
 (defvar ebuku-mode-map
   (let ((km (make-sparse-keymap)))
@@ -270,6 +268,8 @@ Set this variable to 0 for no maximum."
 
 (defun ebuku--call-buku (args)
   "Internal function for calling `buku' with list ARGS."
+  (unless ebuku-buku-path
+    (error "Couldn't find buku: check 'ebuku-buku-path'"))
   (apply #'call-process
          `(,ebuku-buku-path nil t nil
                             "--np" "--nc"
@@ -304,6 +304,8 @@ it always prompts the user for confirmation.  This function starts
 an asychrononous Buku process to delete the bookmark, to which we
 can then send 'y' to confirm.  (The user will have already been
 prompted for confirmation by the \\[ebuku-delete-bookmark] command.)"
+  (unless ebuku-buku-path
+    (error "Couldn't find buku: check 'ebuku-buku-path'"))
   (let ((proc (start-process
                "ebuku-delete"
                nil
@@ -348,16 +350,94 @@ Argument EVENT is the event received from that process."
         (error (concat "Failed to get bookmark data for index " index))))
     `((title . ,title) (url . ,url) (comment . ,comment) (tags ,tags))))
 
-(defun ebuku--get-bookmark-count ()
-  "Internal function to get the number of bookmarks in the Buku database."
-  (with-temp-buffer
-    (if (ebuku--call-buku `("--print" "-1"))
-        (progn
-          (goto-char (point-min))
-          (if (re-search-forward "^\\([[:digit:]]+\\)\\." nil t)
-              (match-string 1)
-            "0"))
-      (error "Failed to get bookmark count"))))
+(defun ebuku--bookmarks (type &optional term exclude)
+  "Get result data from buku with appropriate search arguments:
+
+  - TYPE (string): the type of Buku search (example \"--print\").
+  - TERM (string): what to search for.
+  - EXCLUDE (string): keywords to exclude from the search results.
+
+Result data is a list of alists with keys 'title, 'url, 'index, 'tags, and 'comment."
+  (let ((results)
+        (title-line-re
+         (concat
+          ;; Result number, or index number when using '--print'.
+          "^\\([[:digit:]]+\\)\\. "
+          ;; Title.
+          "\\(.+?\\)"
+          ;; Index number when not using '--print'.
+          "\\(?: \\[\\([[:digit:]]+\\)\\]\\)?\n")))
+    (with-temp-buffer
+      (ebuku--call-buku
+       (remq nil `(,type ,term ,@(when (and exclude (not (string-empty-p exclude)))
+                                   `("--exclude" ,exclude)))))
+      (goto-char (point-min))
+      (while (re-search-forward title-line-re nil t)
+        (let ((data))
+          (if (or (string= "--print" type)
+                  (string= "-p" type))
+              (progn
+                (map-put data 'index (match-string 1))
+                (map-put data 'title (match-string 2)))
+            (map-put data 'title (match-string 2))
+            (map-put data 'index (match-string 3)))
+          (re-search-forward "^\\s-+> \\([^\n]+\\)") ; URL
+          (map-put data 'url (match-string 1))
+          (forward-line)
+          (when (looking-at "^\\s-+[+] \\(.+\\)$")
+            (map-put data 'comment (match-string 1))
+            (forward-line))
+          (when (looking-at "^\\s-+[#] \\(.+\\)$")
+            (map-put data 'tags (split-string (match-string 1) "," t)))
+          (push data results)))
+      results)))
+
+(defun ebuku--insert-bookmark-string (bookmark)
+  "Insert BOOKMARK, as returned from `ebuku--bookmarks', as a string."
+  (let ((index (alist-get 'index bookmark))
+        (url (alist-get 'url bookmark))
+        (comment (alist-get 'comment bookmark))
+        (tags (string-join (alist-get 'tags bookmark) ","))
+        (title (alist-get 'title bookmark)))
+    (insert (propertize "  --  "
+                        'buku-index index)
+            (propertize title
+                        'buku-index index
+                        'data title
+                        'face 'ebuku-title-face)
+            (propertize "\n"
+                        'buku-index index)
+            (propertize "      "
+                        'buku-index index)
+            (propertize url
+                        'buku-index index
+                        'data url
+                        'face 'ebuku-url-face
+                        'mouse-face 'ebuku-url-highlight-face
+                        'help-echo "mouse-1: open link in browser")
+            (propertize "\n"
+                        'buku-index index))
+    (when comment
+      (insert
+       (propertize "      "
+                   'buku-index index)
+       (propertize comment
+                   'buku-index index
+                   'data comment
+                   'face 'ebuku-comment-face)
+       (propertize "\n"
+                   'buku-index index)))
+    (unless (string-empty-p tags)
+      (insert
+       (propertize "      "
+                   'buku-index index)
+       (propertize tags
+                   'buku-index index
+                   'data tags
+                   'face 'ebuku-tags-face)
+       (propertize "\n"
+                   'buku-index index)))
+    (insert "\n")))
 
 (defun ebuku--search-helper (type prompt &optional term exclude)
   "Internal function to call `buku' with appropriate search arguments.
@@ -369,157 +449,40 @@ Argument PROMPT is a string: the minibuffer prompt for that search.
 Argument TERM is a string: the search term.
 
 Argument EXCLUDE is a string: keywords to exclude from search results."
-  (let* ((count "0")
-         (term (if term
-                   term
-                 (read-from-minibuffer prompt)))
-         (exclude (if exclude
-                      exclude
-                    (read-from-minibuffer "Exclude keywords? ")))
-         (search (concat type " " term
-                         (if (not (string= "" exclude))
-                             (concat " --exclude " exclude))))
-         (title-line-re
-          (concat
-           ;; Result number, or index number when using '--print'.
-           "^\\([[:digit:]]+\\)\\. "
-           ;; Title.
-           "\\(.+?\\)"
-           ;; Index number when not using '--print'.
-           "\\(?: \\[\\([[:digit:]]+\\)\\]\\)?\n"
-           ))
-         (title "")
-         (index "")
-         (url "")
-         (comment "")
-         (tags ""))
-    (with-temp-buffer
-      (if (string= "" exclude)
-          (ebuku--call-buku `(,type ,term))
-        (ebuku--call-buku `(,type ,term "--exclude" ,exclude)))
-      (setq ebuku--last-search `(,type ,prompt ,term ,exclude))
-      (if (string= "--print" type)
-          (cond
-           ((string= "[recent]" prompt)
-            (setq count (number-to-string ebuku-recent-count)))
-           ((string= "[all]" prompt)
-            (setq count (ebuku--get-bookmark-count))))
-        (if (re-search-backward "^\\([[:digit:]]+\\)\\." nil t)
-            (setq count (match-string 1))
-          (setq count "0")))
-      (goto-char (point-min))
-      (with-current-buffer "*EBuku*"
-        (let ((inhibit-read-only t))
-          (goto-char ebuku--results-start)
-          (kill-region (point) (point-max))
-          (cond
-           ((string= "0" count)
-            (insert (concat "  No results found for '" search "'.\n\n")))
-           ((string= "1" count)
-            (insert (concat "  Found 1 result for '" search "'.\n\n")))
-           (t
-            (progn
-              (if (or (< (string-to-number count) ebuku-results-limit)
-                      (= 0 ebuku-results-limit))
-                  (insert (concat "  Found "
-                                  count
-                                  " results for '"
-                                  search
-                                  "'.\n\n"))
-                (if (> (string-to-number count) ebuku-results-limit)
-                    (progn
-                      (insert (concat "  Found "
-                                      (number-to-string ebuku-results-limit)
-                                      " results for '"
-                                      search
-                                      "'.\n"))
-                      (insert (concat "  (Omitted "
-                                      (number-to-string
-                                       (- (string-to-number count)
-                                          ebuku-results-limit))
-                                      " results due to non-zero value\n"
-                                      "   of 'ebuku-results-limit'.)\n\n"))))))))))
-      (unless (string= "0" count)
-        (while (re-search-forward title-line-re nil t)
-          (if (string= "--print" type)
-              (progn
-                (setq index (match-string 1))
-                (setq title (match-string 2)))
-            (progn
-              (setq title (match-string 2))
-              (setq index (match-string 3))))
-          (re-search-forward "^\\s-+> \\([^\n]+\\)") ; URL
-          (setq url (match-string 1))
-          (forward-line)
-          (let ((line (buffer-substring
-                       (line-beginning-position)
-                       (line-end-position))))
-            ;; If this line not empty, it's either a comment or tags.
-            (if (not (string= "" line))
-                (if (string-match "^\\s-+[+]" line)
-                    ;; It's a comment.
-                    (progn
-                      (string-match "^\\s-+[+] \\(.+\\)$" line)
-                      (setq comment (match-string 1 line))
-                      (forward-line)
-                      (let ((line (buffer-substring
-                                   (line-beginning-position)
-                                   (line-end-position))))
-                        (if (not (string= "" line))
-                            ;; Line isn't empty, so it must contain tags.
-                            (progn
-                              (string-match "^\\s-+[#] \\(.+\\)$" line)
-                              (setq tags (match-string 1 line))))))
-                  ;; It's tags.
-                  (string-match "^\\s-*[#] \\(.+\\)$" line)
-                  (setq tags (match-string 1 line)))))
-          (with-current-buffer "*EBuku*"
-            (let ((inhibit-read-only t))
-              (insert (propertize "  --  "
-                                  'buku-index index)
-                      (propertize title
-                                  'buku-index index
-                                  'data title
-                                  'face 'ebuku-title-face)
-                      (propertize "\n"
-                                  'buku-index index)
-                      (propertize "      "
-                                  'buku-index index)
-                      (propertize url
-                                  'buku-index index
-                                  'data url
-                                  'face 'ebuku-url-face
-                                  'mouse-face 'ebuku-url-highlight-face
-                                  'help-echo "mouse-1: open link in browser")
-                      (propertize "\n"
-                                  'buku-index index))
-              (unless (string= "" comment)
-                (insert
-                 (propertize "      "
-                             'buku-index index)
-                 (propertize comment
-                             'buku-index index
-                             'data comment
-                             'face 'ebuku-comment-face)
-                 (propertize "\n"
-                             'buku-index index)))
-              (unless (string= "" tags)
-                (insert
-                 (propertize "      "
-                             'buku-index index)
-                 (propertize tags
-                             'buku-index index
-                             'data tags
-                             'face 'ebuku-tags-face)
-                 (propertize "\n"
-                             'buku-index index)))
-              (insert "\n")))
-          (setq comment ""
-                tags ""))
-        (with-current-buffer "*EBuku*"
-          (goto-char (point-min))
-          (goto-char ebuku--results-start)
-          (forward-line 2))))))
+  (let* ((term (or term (read-from-minibuffer prompt)))
+         (exclude (or exclude (read-from-minibuffer "Exclude keywords? ")))
+         (search (string-join
+                  (remq nil `(,type ,term ,@(when (and exclude (not (string-empty-p exclude)))
+                                              `("--exclude" ,exclude)))) " "))
+         (bookmarks (ebuku--bookmarks type term exclude))
+         (count (if (and (string= "--print" type)
+                         (string= "[recent]" prompt))
+                    ebuku-recent-count
+                  (length bookmarks))))
+    (setq ebuku--last-search `(,type ,prompt ,term ,exclude))
+    (with-current-buffer "*EBuku*"
+      (let ((inhibit-read-only t))
+        (goto-char ebuku--results-start)
+        (kill-region (point) (point-max))
+        (cond
+         ((equal 0 count)
+          (insert (concat "  No results found for '" search "'.\n\n")))
+         ((equal 1 count)
+          (insert (concat "  Found 1 result for '" search "'.\n\n")))
+         (t
+          (if (or (< count ebuku-results-limit)
+                  (= 0 ebuku-results-limit))
+              (insert (format "  Found %s results for '%s'.\n\n" count search))
+            (if (> count ebuku-results-limit)
+                (progn
+                  (insert (format "  Found %s results for '%s'.\n\n" ebuku-results-limit search))
+                  (insert (concat "  (Omitted "
+                                  (number-to-string
+                                   (- count
+                                      ebuku-results-limit))
+                                  " results due to non-zero value\n"
+                                  "   of 'ebuku-results-limit'.)\n\n")))))))
+        (mapc #'ebuku--insert-bookmark-string bookmarks)))))
 
 
 ;;
