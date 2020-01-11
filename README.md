@@ -1,10 +1,10 @@
-# ebuku - Interface to the Buku Web bookmark manager
+# ebuku - Interface to the buku Web bookmark manager
 
 *Author:* Alexis <flexibeast@gmail.com><br>
 *Version:* 0<br>
 
-EBuku provides a basic interface to the
-[Buku](https://github.com/jarun/Buku) Web bookmark manager.
+Ebuku provides a basic interface to the
+[buku](https://github.com/jarun/buku) Web bookmark manager.
 
 ![Image of the EBuku UI](ebuku.png)<br>
 
@@ -19,14 +19,14 @@ EBuku provides a basic interface to the
 
 ## Installation
 
-Install [EBuku from MELPA](https://melpa.org/#/ebuku), or put the
+Install [Ebuku from MELPA](https://melpa.org/#/ebuku), or put the
 `ebuku` folder in your load-path and do a `(load "ebuku")`.
 
 ## Usage
 
-Create an EBuku buffer with <kbd>M-x ebuku</kbd>.
+Create an Ebuku buffer with <kbd>M-x ebuku</kbd>.
 
-In the `*EBuku*` buffer, the following bindings are available:
+In the `*Ebuku*` buffer, the following bindings are available:
 
 * <kbd>s</kbd> - Search for a bookmark (`ebuku-search`).
 
@@ -54,7 +54,16 @@ In the `*EBuku*` buffer, the following bindings are available:
   bookmark, edit that bookmark; otherwise, ask for the index of the
   bookmark to edit.
 
-* <kbd>q</kbd> - Quit EBuku.
+* <kbd>q</kbd> - Quit Ebuku.
+
+### Completion
+
+The `ebuku-gather-bookmarks` function can be used to generate a
+list of the bookmarks in the buku database, which can then be
+utilised by completion frameworks such as Ivy or Helm. The format
+of list entries is specified via the
+`ebuku-gather-bookmarks-format` variable, and the list is cached in
+the `ebuku-bookmarks` variable.
 
 ## Customisation
 
@@ -68,11 +77,11 @@ The `ebuku` customize-group can be used to customise:
 
 * the maximum number of bookmarks to show; and
 
-* the faces used by EBuku.
+* the faces used by Ebuku.
 
 ## TODO
 
-* One should be able to edit bookmarks directly in the `*EBuku*`
+* One should be able to edit bookmarks directly in the `*Ebuku*`
   buffer, à la `wdired`.  Much of the infrastructure to support this
   is already in place, but there are still important details yet to
   be implemented.
@@ -81,7 +90,7 @@ The `ebuku` customize-group can be used to customise:
 
 ## Issues / bugs
 
-If you discover an issue or bug in EBuku not already
+If you discover an issue or bug in Ebuku not already
 noted:
 
 * as a TODO item, or
@@ -95,7 +104,7 @@ including:
 * which version of Emacs you're running on which operating system,
   and
 
-* how you installed EBuku.
+* how you installed Ebuku.
 
 ## License
 

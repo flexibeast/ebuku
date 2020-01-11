@@ -81,6 +81,15 @@
 
 ;; * `q' - Quit Ebuku.
 
+;; ### Completion
+
+;; The `ebuku-gather-bookmarks' function can be used to generate a
+;; list of the bookmarks in the buku database, which can then be
+;; utilised by completion frameworks such as Ivy or Helm. The format
+;; of list entries is specified via the
+;; `ebuku-gather-bookmarks-format' variable, and the list is cached in
+;; the `ebuku-bookmarks' variable.
+
 ;; ## Customisation
 
 ;; The `ebuku' customize-group can be used to customise:
