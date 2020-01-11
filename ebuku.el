@@ -147,9 +147,7 @@
   "Emacs interface to the buku bookmark manager."
   :group 'external)
 
-(defcustom ebuku-buku-path (if (eq system-type 'windows-nt)
-                               "buku"
-                             "/bin/buku")
+(defcustom ebuku-buku-path (executable-find "buku")
   "Absolute path of the `buku' executable."
   :type '(file :must-match t)
   :group 'ebuku)
@@ -254,7 +252,7 @@ Set this variable to 0 for no maximum."
 
 ;;
 ;; Keymaps.
-;; 
+;;
 
 (defvar ebuku-mode-map
   (let ((km (make-sparse-keymap)))
@@ -294,6 +292,8 @@ Set this variable to 0 for no maximum."
 
 (defun ebuku--call-buku (args)
   "Internal function for calling `buku' with list ARGS."
+  (unless ebuku-buku-path
+    (error "Couldn't find buku: check 'ebuku-buku-path'"))
   (apply #'call-process
          `(,ebuku-buku-path nil t nil
                             "--np" "--nc"
@@ -328,6 +328,8 @@ it always prompts the user for confirmation.  This function starts
 an asychrononous buku process to delete the bookmark, to which we
 can then send 'y' to confirm.  (The user will have already been
 prompted for confirmation by the \\[ebuku-delete-bookmark] command.)"
+  (unless ebuku-buku-path
+    (error "Couldn't find buku: check 'ebuku-buku-path'"))
   (let ((proc (start-process
                "ebuku-delete"
                nil
