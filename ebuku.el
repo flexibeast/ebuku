@@ -432,7 +432,6 @@ The bookmarks is fetched from buku with the following arguments:
           (push data results)))
       results)))
 
-
 (defun ebuku--search-helper (type prompt &optional term exclude)
   "Internal function to call `buku' with appropriate search arguments.
 
@@ -598,7 +597,6 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
 ;;
 ;; User-facing variables.
 ;;
-
 
 (defvar ebuku-bookmarks '()
   "Cache of bookmarks in the buku database.
