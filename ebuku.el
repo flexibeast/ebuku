@@ -8,7 +8,7 @@
 ;; URL: https://github.com/flexibeast/ebuku
 ;; Keywords: bookmarks,buku,data,web,www
 ;; Version: 0
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "25.1"))
 
 ;;
 ;; This file is NOT part of GNU Emacs.
