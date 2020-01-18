@@ -1,8 +1,9 @@
 ;;; ebuku.el --- Interface to the buku Web bookmark manager -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2019-2020  Alexis <flexibeast@gmail.com>
+;; Copyright (C) 2019-2020  Alexis <flexibeast@gmail.com>, Erik Sjöstrand <sjostrand.erik@gmail.com>
 
 ;; Author: Alexis <flexibeast@gmail.com>
+;;         Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; Maintainer: Alexis <flexibeast@gmail.com>
 ;; Created: 2019-11-07
 ;; URL: https://github.com/flexibeast/ebuku
@@ -85,10 +86,9 @@
 
 ;; The `ebuku-gather-bookmarks' function can be used to generate a
 ;; list of the bookmarks in the buku database, which can then be
-;; utilised by completion frameworks such as Ivy or Helm. The format
-;; of list entries is specified via the
-;; `ebuku-gather-bookmarks-format' variable, and the list is cached in
-;; the `ebuku-bookmarks' variable.
+;; utilised by completion frameworks such as Ivy or Helm. The list is
+;; cached in the `ebuku-bookmarks' variable; the cache can be updated
+;; via the `ebuku-update-cache' function.
 
 ;; ## Customisation
 
