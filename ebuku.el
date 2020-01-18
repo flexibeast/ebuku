@@ -1,14 +1,15 @@
 ;;; ebuku.el --- Interface to the buku Web bookmark manager -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2019-2020  Alexis <flexibeast@gmail.com>
+;; Copyright (C) 2019-2020  Alexis <flexibeast@gmail.com>, Erik Sjöstrand <sjostrand.erik@gmail.com>
 
 ;; Author: Alexis <flexibeast@gmail.com>
+;;         Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; Maintainer: Alexis <flexibeast@gmail.com>
 ;; Created: 2019-11-07
 ;; URL: https://github.com/flexibeast/ebuku
 ;; Keywords: bookmarks,buku,data,web,www
 ;; Version: 0
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "25.1"))
 
 ;;
 ;; This file is NOT part of GNU Emacs.
@@ -85,10 +86,9 @@
 
 ;; The `ebuku-gather-bookmarks' function can be used to generate a
 ;; list of the bookmarks in the buku database, which can then be
-;; utilised by completion frameworks such as Ivy or Helm. The format
-;; of list entries is specified via the
-;; `ebuku-gather-bookmarks-format' variable, and the list is cached in
-;; the `ebuku-bookmarks' variable.
+;; utilised by completion frameworks such as Ivy or Helm. The list is
+;; cached in the `ebuku-bookmarks' variable; the cache can be updated
+;; via the `ebuku-update-cache' function.
 
 ;; ## Customisation
 
@@ -152,6 +152,11 @@
   :type '(file :must-match t)
   :group 'ebuku)
 
+(defcustom ebuku-cache-default-args '("--print")
+  "Default arguments to `ebuku-update-cache'."
+  :type '(repeat string)
+  :group 'ebuku)
+
 (defcustom ebuku-display-on-startup 'all
   "What to display in the search results area on startup.
 
@@ -160,22 +165,6 @@ Specify `\\='all' for all bookmarks; `\\='recent' for recent additions; or
   :type '(radio (const :tag "All bookmarks" all)
                 (const :tag "Recent additions" recent)
                 (const :tag "No bookmarks" nil))
-  :group 'ebuku)
-
-(defcustom ebuku-gather-bookmarks-format "1"
-  "Format of bookmarks to be returned by `ebuku-gather-bookmarks'.
-
-The format is a string accepted by buku's '--format' option."
-  :type '(radio (const :tag "Only URL" "1")
-                (const :tag "Only URL; no index" "10")
-                (const :tag "URL and tags" "2")
-                (const :tag "URL and tags; no index" "20")
-                (const :tag "Only title" "3")
-                (const :tag "Only title; no index" "30")
-                (const :tag "URL, title and tags" "4")
-                (const :tag "URL, title and tags; no index" "40")
-                (const :tag "Title and tags" "5")
-                (const :tag "Title and tags; no index" "50"))
   :group 'ebuku)
 
 (defcustom ebuku-mode-hook nil
@@ -547,7 +536,6 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
           (goto-char ebuku--results-start)
           (forward-line 2))))))
 
-
 ;;
 ;; User-facing variables.
 ;;
@@ -555,10 +543,8 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
 (defvar ebuku-bookmarks '()
   "Cache of bookmarks in the buku database.
 
-This cache is populated by the `ebuku-gather-bookmarks' function,
-with each entry having the format specified by the
-`ebuku-gather-bookmarks-format' variable.")
-
+This cache is populated by the `ebuku-update-cache' command.
+Each bookmark is an alist with the keys 'title 'url 'index 'tags 'comment.")
 
 ;;
 ;; User-facing functions.
@@ -632,18 +618,50 @@ otherwise, ask for the index of the bookmark to edit."
                   (error "Failed to update bookmark")))))
         (error (concat "Failed to get bookmark data for index " index))))))
 
-(defun ebuku-gather-bookmarks ()
-  "Return a list of all available bookmarks.
+(defun ebuku-gather-bookmarks (&optional type term exclude)
+  "Return a list of bookmarks.
 
-This function is intended for use by completion frameworks, such
-as Ivy or Helm.
+Each bookmark is an alist with the keys 'title 'url 'index 'tags 'comment.
+The bookmarks is fetched from buku with the following arguments:
 
-The format of each entry in the list is determined by the variable
-`ebuku-gather-bookmarks-format'."
-  (interactive)
-  (with-temp-buffer
-    (ebuku--call-buku `("--print" "--format" ,ebuku-gather-bookmarks-format))
-    (setq ebuku-bookmarks (cdr (split-string (buffer-string) "\n")))))
+  - TYPE (string): the type of buku search (default \"--print\").
+  - TERM (string): what to search for.
+  - EXCLUDE (string): keywords to exclude from the search results."
+  (let ((results)
+        (type (or type "--print"))
+        (title-line-re
+         (concat
+          ;; Result number, or index number when using '--print'.
+          "^\\([[:digit:]]+\\)\\. "
+          ;; Title.
+          "\\(.+?\\)"
+          ;; Index number when not using '--print'.
+          "\\(?: \\[\\([[:digit:]]+\\)\\]\\)?\n")))
+    (with-temp-buffer
+      (ebuku--call-buku
+       (remq nil
+             `(,type ,term ,@(when (and exclude (not (string-empty-p exclude)))
+                               `("--exclude" ,exclude)))))
+      (goto-char (point-min))
+      (while (re-search-forward title-line-re nil t)
+        (let ((data))
+          (if (or (string= "--print" type)
+                  (string= "-p" type))
+              (progn
+                (map-put data 'index (match-string 1))
+                (map-put data 'title (match-string 2)))
+            (map-put data 'title (match-string 2))
+            (map-put data 'index (match-string 3)))
+          (re-search-forward "^\\s-+> \\([^\n]+\\)") ; URL
+          (map-put data 'url (match-string 1))
+          (forward-line)
+          (when (looking-at "^\\s-+[+] \\(.+\\)$")
+            (map-put data 'comment (match-string 1))
+            (forward-line))
+          (when (looking-at "^\\s-+[#] \\(.+\\)$")
+            (map-put data 'tags (split-string (match-string 1) "," t)))
+          (push data results)))
+      results)))
 
 (defun ebuku-next-bookmark ()
   "Move point to the next bookmark URL."
@@ -748,6 +766,18 @@ The maximum number of bookmarks to show is specified by
         (setq ebuku-results-limit 0))
     (setq ebuku-results-limit ebuku--last-results-limit))
   (ebuku-refresh))
+
+(defun ebuku-update-cache (&optional type term exclude)
+  "Repopulate `ebuku-bookmarks'.
+
+The arguments TYPE, TERM, and EXCLUDE are sent to `ebuku-gather-bookmarks'.
+If an argument is excluded, get it from `ebuku-cache-default-args'."
+  (interactive)
+  (setq ebuku-bookmarks
+        (ebuku-gather-bookmarks
+         (or type (nth 0 ebuku-cache-default-args))
+         (or term (nth 1 ebuku-cache-default-args))
+         (or exclude (nth 2 ebuku-cache-default-args)))))
 
 
 ;;;###autoload

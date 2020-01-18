@@ -60,10 +60,9 @@ In the `*Ebuku*` buffer, the following bindings are available:
 
 The `ebuku-gather-bookmarks` function can be used to generate a
 list of the bookmarks in the buku database, which can then be
-utilised by completion frameworks such as Ivy or Helm. The format
-of list entries is specified via the
-`ebuku-gather-bookmarks-format` variable, and the list is cached in
-the `ebuku-bookmarks` variable.
+utilised by completion frameworks such as Ivy or Helm. The list is
+cached in the `ebuku-bookmarks` variable; the cache can be updated
+via the `ebuku-update-cache` function.
 
 ## Customisation
 
