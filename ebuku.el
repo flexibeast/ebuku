@@ -615,8 +615,8 @@ otherwise, ask for the index of the bookmark to edit."
                     (progn
                       (ebuku-refresh)
                       (message "Bookmark updated."))
-                  (error "Failed to update bookmark")))))
-        (error (concat "Failed to get bookmark data for index " index))))))
+                  (error "Failed to update bookmark"))))
+          (error (concat "Failed to get bookmark data for index " index)))))))
 
 (defun ebuku-gather-bookmarks (&optional type term exclude)
   "Return a list of bookmarks.
