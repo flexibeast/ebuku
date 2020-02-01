@@ -1,6 +1,6 @@
 # ebuku - Interface to the buku Web bookmark manager
 
-*Author:* Alexis <flexibeast@gmail.com><br>
+*Author:* Alexis <flexibeast@gmail.com>, Erik Sjöstrand <sjostrand.erik@gmail.com><br>
 *Version:* 0<br>
 
 Ebuku provides a basic interface to the
