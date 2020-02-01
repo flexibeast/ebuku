@@ -74,7 +74,10 @@ The `ebuku` customize-group can be used to customise:
 
 * which bookmarks to show on startup;
 
-* the maximum number of bookmarks to show; and
+* the maximum number of bookmarks to show;
+
+* whether to automatically retrieve URL metadata when adding a
+  bookmark; and
 
 * the faces used by Ebuku.
 
