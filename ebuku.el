@@ -571,6 +571,11 @@ Each bookmark is an alist with the keys 'title 'url 'index 'tags 'comment.")
           (if (ebuku--call-buku `("--add" ,url))
               (progn
                 (goto-char (point-min))
+                (if (re-search-forward
+                     "already exists at index \\([[:digit:]]+\\)" nil t)
+                    (user-error (concat
+                                 "Bookmark already exists at index "
+                                 (match-string 1))))
                 (re-search-forward "^\\([[:digit:]]+\\)\\. \\(.+\\)$")
                 (setq index (match-string 1))
                 (setq title (match-string 2))
