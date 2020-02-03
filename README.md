@@ -62,11 +62,10 @@ package, in `evil-collection-ebuku.el`.
 
 ### Completion
 
-The `ebuku-gather-bookmarks` function can be used to generate a
-list of the bookmarks in the buku database, which can then be
-utilised by completion frameworks such as Ivy or Helm. The list is
-cached in the `ebuku-bookmarks` variable; the cache can be updated
-via the `ebuku-update-cache` function.
+Ebuku provides two cache variables for use by completion frameworks
+(e.g. Ivy or Helm): `ebuku-bookmarks` and `ebuku-tags`, which can
+be populated via the `ebuku-update-bookmarks-cache` and
+`ebuku-update-tags-cache` functions, respectively.
 
 ## Customisation
 

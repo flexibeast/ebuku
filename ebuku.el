@@ -87,11 +87,10 @@
 
 ;; ### Completion
 
-;; The `ebuku-gather-bookmarks' function can be used to generate a
-;; list of the bookmarks in the buku database, which can then be
-;; utilised by completion frameworks such as Ivy or Helm. The list is
-;; cached in the `ebuku-bookmarks' variable; the cache can be updated
-;; via the `ebuku-update-cache' function.
+;; Ebuku provides two cache variables for use by completion frameworks
+;; (e.g. Ivy or Helm): `ebuku-bookmarks' and `ebuku-tags', which can
+;; be populated via the `ebuku-update-bookmarks-cache' and
+;; `ebuku-update-tags-cache' functions, respectively.
 
 ;; ## Customisation
 
@@ -554,8 +553,13 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
 (defvar ebuku-bookmarks '()
   "Cache of bookmarks in the buku database.
 
-This cache is populated by the `ebuku-update-cache' command.
+This cache is populated by the `ebuku-update-bookmarks-cache' command.
 Each bookmark is an alist with the keys 'title 'url 'index 'tags 'comment.")
+
+(defvar ebuku-tags '()
+  "Cache of tags in the buku database.
+
+This cache is populated by the `ebuku-update-tags-cache' command.")
 
 ;;
 ;; User-facing functions.
@@ -809,10 +813,10 @@ The maximum number of bookmarks to show is specified by
     (setq ebuku-results-limit ebuku--last-results-limit))
   (ebuku-refresh))
 
-(defun ebuku-update-cache (&optional type term exclude)
-  "Repopulate `ebuku-bookmarks'.
+(defun ebuku-update-bookmarks-cache (&optional type term exclude)
+  "Repopulate the `ebuku-bookmarks' variable.
 
-The arguments TYPE, TERM, and EXCLUDE are sent to `ebuku-gather-bookmarks'.
+The arguments TYPE, TERM, and EXCLUDE are passed to `ebuku-gather-bookmarks'.
 If an argument is excluded, get it from `ebuku-cache-default-args'."
   (interactive)
   (setq ebuku-bookmarks
@@ -820,6 +824,15 @@ If an argument is excluded, get it from `ebuku-cache-default-args'."
          (or type (nth 0 ebuku-cache-default-args))
          (or term (nth 1 ebuku-cache-default-args))
          (or exclude (nth 2 ebuku-cache-default-args)))))
+
+(defun ebuku-update-tags-cache ()
+  "Repopulate the `ebuku-tags' variable."
+  (interactive)
+  (let ((tags '()))
+    (ebuku-update-bookmarks-cache)
+    (dolist (bookmark ebuku-bookmarks)
+      (setq tags (nconc (map-elt bookmark 'tags) tags)))
+    (setq ebuku-tags (sort (seq-uniq tags) 'string-collate-lessp))))
 
 
 ;;;###autoload
