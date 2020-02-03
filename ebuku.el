@@ -81,6 +81,10 @@
 
 ;; * `q' - Quit Ebuku.
 
+;; Bindings for Evil are available via the
+;; [evil-collection](https://github.com/emacs-evil/evil-collection)
+;; package, in `evil-collection-ebuku.el`.
+
 ;; ### Completion
 
 ;; The `ebuku-gather-bookmarks' function can be used to generate a
