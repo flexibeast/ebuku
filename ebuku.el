@@ -194,6 +194,11 @@ Set this variable to 0 for no maximum."
   :type 'boolean
   :group 'ebuku)
 
+(defcustom ebuku-db-path nil
+  "Absolute path to a buku bookmarks database."
+  :type '(file :must-match t)
+  :group 'ebuku)
+
 
 (defgroup ebuku-faces nil
   "Faces for `ebuku-mode'."
@@ -296,7 +301,8 @@ Set this variable to 0 for no maximum."
   (apply #'call-process
          `(,ebuku-buku-path nil t nil
                             "--np" "--nc"
-                            ,@args)))
+                            ,@(nconc (when ebuku-db-path (list "--db" (expand-file-name ebuku-db-path)))
+                                     args))))
 
 (defun ebuku--create-mode-menu ()
   "Internal function to create the `ebuku-mode' menu."
