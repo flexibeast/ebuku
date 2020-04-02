@@ -98,6 +98,8 @@
 
 ;; * the path to the `buku' executable;
 
+;; * the path to the buku database;
+
 ;; * the number of recently-added bookmarks to show;
 
 ;; * which bookmarks to show on startup;
