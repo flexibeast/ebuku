@@ -162,6 +162,22 @@
   :type '(repeat string)
   :group 'ebuku)
 
+(defcustom ebuku-database-path (cond
+                                ((eq system-type 'windows-nt)
+                                 (substitute-in-file-name
+                                  "%APPDATA%\buku\bookmarks.db"))
+                                ((getenv "XDG_DATA_HOME")
+                                 (substitute-in-file-name
+                                  "$XDG_DATA_HOME/buku/bookmarks.db"))
+                                ((getenv "HOME")
+                                 (substitute-in-file-name
+                                  "$HOME/.local/share/buku/bookmarks.db"))
+                                (t
+                                 "./bookmarks.db"))
+  "Absolute path of the buku database."
+  :type '(file :must-match t)
+  :group 'ebuku)
+
 (defcustom ebuku-display-on-startup 'all
   "What to display in the search results area on startup.
 
@@ -296,6 +312,7 @@ Set this variable to 0 for no maximum."
   (apply #'call-process
          `(,ebuku-buku-path nil t nil
                             "--np" "--nc"
+                            "--db" ,ebuku-database-path
                             ,@args)))
 
 (defun ebuku--create-mode-menu ()
