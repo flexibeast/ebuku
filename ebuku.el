@@ -512,10 +512,10 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                         (if (not (string= "" line))
                             ;; Line isn't empty, so it must contain tags.
                             (progn
-                              (string-match "^\\s-+[#] \\(.+\\)$" line)
+                              (string-match "^\\s-+[#] \\(.*\\)$" line)
                               (setq tags (match-string 1 line))))))
                   ;; It's tags.
-                  (string-match "^\\s-*[#] \\(.+\\)$" line)
+                  (string-match "^\\s-*[#] \\(.*\\)$" line)
                   (setq tags (match-string 1 line)))))
           (with-current-buffer "*Ebuku*"
             (let ((inhibit-read-only t))
