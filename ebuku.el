@@ -854,8 +854,7 @@ If an argument is excluded, get it from `ebuku-cache-default-args'."
     (setq ebuku-tags (sort (seq-uniq tags) 'string-collate-lessp))))
 
 (defun ebuku-append-tag-to-bookmark ()
-  "Interactive function to append tag to bookmark."
-  ;; TODO fix an issue where it moves the cursor to the top after adding
+  "Append tag to bookmark at point."
   (interactive)
   (ebuku-update-tags-cache)
   (let ((tag (completing-read "Append tag? " ebuku-tags))
@@ -866,34 +865,39 @@ If an argument is excluded, get it from `ebuku-cache-default-args'."
     (message "Added tag to bookmark")))
 
 (defun ebuku--tags-join (tags)
-  "Internal function that joins a list of tags into a comma separated string of tags."
-  (typecase tags
-    (stringp tags)
-    (listp (mapconcat 'identity tags ","))))
+  "Internal function to join a list of TAGS into a comma separated string."
+  (cond ((stringp tags)
+	 tags)
+	((listp tags)
+	 (mapconcat 'identity tags ","))
+	(t
+	 (error "Tags need to be either a string or list"))))
 
 (defun ebuku--tags-add (index tags)
-  "Append tag to the list of tags on the index"
+  "Internal function to append TAGS to the list of tags on the INDEX."
   (with-temp-buffer
     (ebuku--call-buku
      `("--update" , index
        "--tag", "+" , (ebuku--tags-join tags)))))
 
 (defun ebuku--tags-remove (index tags)
-  "Remove tag from the list of tags on the index"
+  "Internal function to remove TAGS from the list of tags on the INDEX."
   (with-temp-buffer
     (ebuku--call-buku
      `("--update" , index
        "--tag", "-" , (ebuku--tags-join tags)))))
 
 (defun ebuku--tags-set (index tags)
-  "Replace the current list of tags on the index with the one provided to this bookmark."
+  "Internal function to set TAGS on the INDEX.
+
+This function does not append to the current list of TAGS it replaces it."
   (with-temp-buffer
-    (ebuku--call-buku-no-output
+    (ebuku--call-buku
      `("--update" , index
        "--tag", (ebuku--tags-join tags)))))
 
-(defun ebuku--tags-reset (index)
-  "Remove all tags from index."
+(defun ebuku--tags-clear (index)
+  "Internal function to clear all tags from INDEX."
   (ebuku--tags-set index ""))
 
 
