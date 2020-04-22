@@ -724,7 +724,11 @@ The bookmarks is fetched from buku with the following arguments:
             (map-put data 'comment (match-string 1))
             (forward-line))
           (when (looking-at "^\\s-+[#] \\(.+\\)$")
-            (map-put data 'tags (split-string (match-string 1) "," t)))
+            (map-put data 'tags (or (split-string
+                                     (or (match-string 1)
+                                         "")
+                                     "," t)
+                                    '())))
           (push data results)))
       results)))
 
