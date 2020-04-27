@@ -665,12 +665,12 @@ otherwise, ask for the index of the bookmark to edit."
                   (url (read-from-minibuffer
                         "URL? "
                         (cdr (assoc 'url bookmark))))
-                  (comment (read-from-minibuffer
-                            "Comment? "
-                            (cdr (assoc 'comment bookmark))))
                   (tags (read-from-minibuffer
                          "Tags? "
-                         (cdr (assoc 'tags bookmark)))))
+                         (cdr (assoc 'tags bookmark))))
+                  (comment (read-from-minibuffer
+                            "Comment? "
+                            (cdr (assoc 'comment bookmark)))))
               (with-temp-buffer
                 (if (ebuku--call-buku `("--update" ,index
                                         "--title" ,title
