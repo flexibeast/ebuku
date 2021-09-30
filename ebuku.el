@@ -152,6 +152,8 @@
 ;; User-customisable settings.
 ;;
 
+(require 'browse-url)
+
 (defgroup ebuku nil
   "Emacs interface to the buku bookmark manager."
   :group 'external)
