@@ -79,6 +79,8 @@
 ;;   bookmark, edit that bookmark; otherwise, ask for the index of the
 ;;   bookmark to edit.
 
+;; * `C' - Add a new bookmark (`ebuku-copy-url').
+
 ;; * `q' - Quit Ebuku.
 
 ;; Bindings for Evil are available via the
@@ -284,6 +286,7 @@ Set this variable to 0 for no maximum."
     (define-key km (kbd "*") #'ebuku-show-all)
     (define-key km (kbd "-") #'ebuku-toggle-results-limit)
     (define-key km (kbd "<RET>") #'ebuku-open-url)
+    (define-key km (kbd "C") #'ebuku-copy-url)
     (define-key km [mouse-1] #'ebuku-open-url)
     (define-key km [mouse-2] #'ebuku-open-url)
     km))
@@ -328,6 +331,7 @@ Set this variable to 0 for no maximum."
       ["Refresh" (ebuku-refresh) :keys "g"]
       "---"
       ["Open bookmark" (ebuku-open-url) :keys "RET"]
+      ["Copy bookmark" (ebuku-copy-url) :keys "C"]
       ["Next bookmark" (ebuku-next-bookmark) :keys "n"]
       ["Previous bookmark" (ebuku-previous-bookmark) :keys "p"]
       "---"
@@ -750,6 +754,20 @@ The bookmarks is fetched from buku with the following arguments:
           (goto-char (next-single-property-change (point) 'data))
           (browse-url-at-point))
       (user-error "No bookmark at point"))))
+
+(defun ebuku-copy-url ()
+  "Copy the URL to kill ring for the bookmark at point."
+  (interactive)
+  (let ((index (get-char-property (point) 'buku-index)))
+    (if index
+        (save-excursion
+          (goto-char (1+ (previous-single-property-change (point) 'buku-index)))
+          (forward-line)
+          (goto-char (next-single-property-change (point) 'data))
+          (let ((url-to-copy (browse-url-url-at-point)))
+            (kill-new url-to-copy)
+            (message "Copied: %s" url-to-copy)))
+      (user-error "No bookmark URL at point"))))
 
 (defun ebuku-previous-bookmark ()
   "Move point to the previous bookmark URL."

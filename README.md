@@ -40,6 +40,8 @@ In the `*Ebuku*` buffer, the following bindings are available:
 
 * <kbd>RET</kbd> - Open the bookmark at point in a browser (`ebuku-open-url`).
 
+* <kbd>C</kbd> - Copy the bookmark at point to kill ring (`ebuku-copy-url`).
+
 * <kbd>n</kbd> - Move point to the next bookmark URL (`ebuku-next-bookmark`).
 
 * <kbd>p</kbd> - Move point to the previous bookmark URL (`ebuku-previous-bookmark`).
