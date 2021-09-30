@@ -79,7 +79,7 @@
 ;;   bookmark, edit that bookmark; otherwise, ask for the index of the
 ;;   bookmark to edit.
 
-;; * `C' - Add a new bookmark (`ebuku-copy-url').
+;; * `C' - Copy the URL of the bookmark at point to the kill ring (`ebuku-copy-url').
 
 ;; * `q' - Quit Ebuku.
 
@@ -756,7 +756,7 @@ The bookmarks is fetched from buku with the following arguments:
       (user-error "No bookmark at point"))))
 
 (defun ebuku-copy-url ()
-  "Copy the URL to kill ring for the bookmark at point."
+  "Copy the URL of the bookmark at point to the kill ring."
   (interactive)
   (let ((index (get-char-property (point) 'buku-index)))
     (if index
