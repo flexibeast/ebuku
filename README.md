@@ -1,6 +1,6 @@
 # ebuku - Interface to the buku Web bookmark manager
 
-*Author:* Alexis <flexibeast@gmail.com>, Erik Sjöstrand <sjostrand.erik@gmail.com><br>
+*Author:* Alexis <flexibeast@gmail.com>, Erik Sjöstrand <sjostrand.erik@gmail.com>, Junji Zhi [https://github.com/junjizhi]<br>
 *Version:* 0<br>
 
 Ebuku provides a basic interface to the
@@ -53,6 +53,9 @@ In the `*Ebuku*` buffer, the following bindings are available:
 * <kbd>e</kbd> - Edit a bookmark (`ebuku-edit-bookmark`).  If point is on a
   bookmark, edit that bookmark; otherwise, ask for the index of the
   bookmark to edit.
+
+* <kbd>C</kbd> - Copy the URL of the bookmark at point to the kill ring
+  (`ebuku-copy-url`).
 
 * <kbd>q</kbd> - Quit Ebuku.
 
