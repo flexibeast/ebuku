@@ -783,7 +783,8 @@ The bookmarks is fetched from buku with the following arguments:
   "Refresh the list of search results, based on last search."
   (interactive)
   (if ebuku--last-search
-      (let ((term (nth 2 ebuku--last-search)))
+      (let ((term (nth 2 ebuku--last-search))
+            (line (line-number-at-pos)))
         (if (and (not (string= "[recent]" (nth 1 ebuku--last-search)))
                  (string-match "^-\\([[:digit:]]+\\)$" term))
             (let ((count (string-to-number (match-string 1 term))))
@@ -792,7 +793,9 @@ The bookmarks is fetched from buku with the following arguments:
                         (concat "-"
                                 (number-to-string ebuku-results-limit))))
               (apply #'ebuku--search-helper ebuku--last-search))
-          (apply #'ebuku--search-helper ebuku--last-search)))))
+          (apply #'ebuku--search-helper ebuku--last-search))
+        (goto-line line)
+        (recenter-top-bottom))))
 
 (defun ebuku-search (char)
   "Search the buku database for bookmarks.
