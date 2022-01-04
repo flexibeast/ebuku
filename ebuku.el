@@ -387,15 +387,33 @@ Argument EVENT is the event received from that process."
     (with-temp-buffer
       (if (ebuku--call-buku `("--print" ,index))
           (progn
+            ;; Trim any trailing newlines.
             (goto-char (point-min))
-            (re-search-forward "^[[:digit:]]+\\.\\s-+\\(.+\\)$" nil t)
+            (while (re-search-forward "^\n$" nil t)
+              (replace-match ""))
+            ;; Collect bookmark components.
+            (goto-char (point-min))
+            (re-search-forward
+             "^[[:digit:]]+\\.\\s-+\\(.+\\)$" nil t)
             (setq title (match-string 1))
-            (re-search-forward "^\\s-+> \\(.+\\)$" nil t)
+            (re-search-forward
+             "^\\s-+> \\(.+\\)$" nil t)
             (setq url (match-string 1))
-            (if (re-search-forward "^\\s-+\\+ \\(.+\\)$" nil t)
-                (setq comment (match-string 1)))
-            (if (re-search-forward "^\\s-+# \\(.+\\)$" nil t)
-                (setq tags (match-string 1))))
+            (if (re-search-forward
+                 "^\\s-+\\+ \\(\\(?:.\\|\n\\)+\\)" nil t)
+                (progn
+                  (if (match-string 1)
+                      (let ((match (match-string 1)))
+                        (if (string-match
+                             "\\(\\(?:.\\|\n\\)+?\\)\n\\s-+# \\(.+\\)"
+                             match)
+                            (progn
+                              (setq comment (match-string 1 match))
+                              (setq tags (match-string 2 match)))
+                          (setq comment match)))))
+              (if (re-search-forward
+                   "^\\s-+\\# \\(.+\\)" nil t)
+                  (setq tags (match-string 1)))))
         (error (concat "Failed to get bookmark data for index " index))))
     `((title . ,title) (url . ,url) (comment . ,comment) (tags ,tags))))
 
@@ -437,7 +455,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
            ;; Title.
            "\\(.+?\\)"
            ;; Index number when not using '--print'.
-           "\\(?: \\[\\([[:digit:]]+\\)\\]\\)?\n"
+           "\\(?: \\[\\([[:digit:]]+\\)\\]\\)?"
            ))
          (title "")
          (index "")
@@ -491,7 +509,10 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                                       " results due to non-zero value\n"
                                       "   of 'ebuku-results-limit'.)\n\n"))))))))))
       (unless (string= "0" count)
-        (while (re-search-forward title-line-re nil t)
+        (while (re-search-forward
+                (concat title-line-re "\n")
+                nil
+                t)
           (if (string= "--print" type)
               (progn
                 (setq index (match-string 1))
@@ -509,21 +530,40 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
             (if (not (string= "" line))
                 (if (string-match "^\\s-+[+]" line)
                     ;; It's a comment.
-                    (progn
-                      (string-match "^\\s-+[+] \\(.+\\)$" line)
-                      (setq comment (match-string 1 line))
-                      (forward-line)
-                      (let ((line (buffer-substring
-                                   (line-beginning-position)
-                                   (line-end-position))))
-                        (if (not (string= "" line))
-                            ;; Line isn't empty, so it must contain tags.
-                            (progn
-                              (string-match "^\\s-+[#] \\(.*\\)$" line)
-                              (setq tags (match-string 1 line))))))
+                    (let ((start (line-beginning-position)))
+                      (progn
+                        (re-search-forward
+                         (concat "\\("
+                                 "^\\s-+[#]" ; tags line
+                                 "\\|"
+                                 title-line-re ; new bookmark
+                                 "\\|"
+                                 "\\'" ; end of buffer
+                                 "\\)"))
+                        (beginning-of-line)
+                        (let* ((end (point))
+                               (comment-string
+                                (buffer-substring start (- end 2))))
+                          (setq comment
+                                (progn
+                                  (string-match
+                                   "^\\s-+[+] "
+                                   comment-string)
+                                  (substring comment-string
+                                             (match-end 0)
+                                             nil))))
+                        (let ((line (buffer-substring
+                                     (line-beginning-position)
+                                     (line-end-position))))
+                          (cond
+                           ((string-match "^\\s-+[#] \\(.*\\)$" line)
+                            (setq tags (match-string 1 line)))
+                           ((string-match title-line-re line)
+                            (forward-line -1))))))
                   ;; It's tags.
-                  (string-match "^\\s-*[#] \\(.*\\)$" line)
-                  (setq tags (match-string 1 line)))))
+                  (progn
+                    (string-match "^\\s-*[#] \\(.*\\)$" line)
+                    (setq tags (match-string 1 line))))))
           (with-current-buffer "*Ebuku*"
             (let ((inhibit-read-only t))
               (insert (propertize "  --  "
@@ -545,6 +585,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                       (propertize "\n"
                                   'buku-index index))
               (unless (string= "" comment)
+                (setq comment (replace-regexp-in-string "\n" "\n      " comment))
                 (insert
                  (propertize "      "
                              'buku-index index)
