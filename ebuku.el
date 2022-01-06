@@ -306,7 +306,7 @@ Set this variable to 0 for no maximum."
   "Internal variable for use by `ebuku-toggle-results-limit'.")
 
 (defvar ebuku--results-start nil
-  "Internal variable containing buffer location of start of search results.")
+  "Internal variable containing buffer line of start of search results.")
 
 
 ;;
@@ -479,7 +479,8 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
       (goto-char (point-min))
       (with-current-buffer "*Ebuku*"
         (let ((inhibit-read-only t))
-          (goto-char ebuku--results-start)
+          (goto-line ebuku--results-start)
+          (beginning-of-line)
           (kill-region (point) (point-max))
           (cond
            ((string= "0" count)
@@ -609,8 +610,8 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
           (setq comment ""
                 tags ""))
         (with-current-buffer "*Ebuku*"
-          (goto-char (point-min))
-          (goto-char ebuku--results-start)
+          (goto-line ebuku--results-start)
+          (beginning-of-line)
           (forward-line 2))))))
 
 ;;
@@ -824,7 +825,16 @@ The bookmarks is fetched from buku with the following arguments:
   "Refresh the list of search results, based on last search."
   (interactive)
   (if ebuku--last-search
-      (let ((term (nth 2 ebuku--last-search)))
+      (let* ((term (nth 2 ebuku--last-search))
+             (index (get-char-property (point) 'buku-index))
+             (line (if (not index)
+                       (if (< (line-number-at-pos) (+ ebuku--results-start 2))
+                           (line-number-at-pos)
+                         (if (not (text-property-search-backward 'buku-index))
+                             (progn
+                               (text-property-search-forward 'buku-index)
+                               (line-number-at-pos))
+                           (line-number-at-pos))))))
         (if (and (not (string= "[recent]" (nth 1 ebuku--last-search)))
                  (string-match "^-\\([[:digit:]]+\\)$" term))
             (let ((count (string-to-number (match-string 1 term))))
@@ -833,7 +843,13 @@ The bookmarks is fetched from buku with the following arguments:
                         (concat "-"
                                 (number-to-string ebuku-results-limit))))
               (apply #'ebuku--search-helper ebuku--last-search))
-          (apply #'ebuku--search-helper ebuku--last-search)))))
+          (apply #'ebuku--search-helper ebuku--last-search))
+        (if index
+            (progn
+              (goto-char (point-min))
+              (if (not (text-property-search-forward 'buku-index index))
+                  (goto-line ebuku--results-start)))
+          (goto-line line)))))
 
 (defun ebuku-search (char)
   "Search the buku database for bookmarks.
@@ -945,7 +961,7 @@ If an argument is excluded, get it from `ebuku-cache-default-args'."
         (insert (propertize
                  "  ----------\n\n"
                  'face 'ebuku-separator-face))
-        (setq ebuku--results-start (point))
+        (setq ebuku--results-start (line-number-at-pos))
         (cond
          ((eq 'all ebuku-display-on-startup)
           (ebuku-show-all))
@@ -953,7 +969,7 @@ If an argument is excluded, get it from `ebuku-cache-default-args'."
           (ebuku-search-on-recent))
          ((eq nil ebuku-display-on-startup)
           (insert "  [ Please specify a search, or press 'r' for recent additions. ]")))
-        (goto-char ebuku--results-start)
+        (goto-line ebuku--results-start)
         (add-text-properties (point-min) (point)
                              '(read-only t intangible t))
         (ebuku--create-mode-menu)
