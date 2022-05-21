@@ -736,7 +736,7 @@ otherwise, ask for the index of the bookmark to edit."
   "Return a list of bookmarks.
 
 Each bookmark is an alist with the keys 'title 'url 'index 'tags 'comment.
-The bookmarks is fetched from buku with the following arguments:
+The bookmarks are fetched from buku with the following arguments:
 
   - TYPE (string): the type of buku search (default \"--print\").
   - TERM (string): what to search for.
