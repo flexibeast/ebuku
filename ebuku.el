@@ -444,7 +444,9 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                  (read-from-minibuffer prompt)))
          (exclude (if exclude
                       exclude
-                    (read-from-minibuffer "Exclude keywords? ")))
+                    (if (string= "[index]" prompt)
+                        ""
+                      (read-from-minibuffer "Exclude keywords? "))))
          (search (concat type " " term
                          (if (not (string= "" exclude))
                              (concat " --exclude " exclude))))
@@ -469,6 +471,8 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
       (setq ebuku--last-search `(,type ,prompt ,term ,exclude))
       (if (string= "--print" type)
           (cond
+           ((string= "[index]" prompt)
+            (setq count "1"))
            ((string= "[recent]" prompt)
             (setq count (number-to-string ebuku-recent-count)))
            ((string= "[all]" prompt)
@@ -649,9 +653,20 @@ This cache is populated by the `ebuku-update-tags-cache' command.")
                 (goto-char (point-min))
                 (if (re-search-forward
                      "already exists at index \\([[:digit:]]+\\)" nil t)
-                    (user-error (concat
-                                 "Bookmark already exists at index "
-                                 (match-string 1))))
+                    (let ((index (match-string 1)))
+                      (if (y-or-n-p
+                           (concat
+                            "Bookmark already exists at index "
+                            index
+                            " "
+                            "(\""
+                            (cdr (assoc
+                                  'title
+                                  (ebuku--get-bookmark-at-index index)))
+                            "\")"
+                            "; display? "))
+                          (ebuku--search-helper "--print" "[index]" index))
+                      (user-error "Bookmark already exists")))
                 (re-search-forward "^\\([[:digit:]]+\\)\\. \\(.+\\)$")
                 (setq index (match-string 1))
                 (setq title (match-string 2))
