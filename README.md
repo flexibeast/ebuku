@@ -54,14 +54,20 @@ In the `*Ebuku*` buffer, the following bindings are available:
   bookmark, edit that bookmark; otherwise, ask for the index of the
   bookmark to edit.
 
-* <kbd>C</kbd> - Copy the URL of the bookmark at point to the kill ring
-  (`ebuku-copy-url`).
+* <kbd>C</kbd> - Copy the URL of the bookmark at point to the kill ring (`ebuku-copy-url`).
+
+* <kbd>T</kbd> - Copy the title of the bookmark at point to the kill ring (`ebuku-copy-title`).
+
+* <kbd>I</kbd> - Copy the index of the bookmark at point to the kill ring (`ebuku-copy-index`).
 
 * <kbd>q</kbd> - Quit Ebuku.
 
 Bindings for Evil are available via the
 [evil-collection](https://github.com/emacs-evil/evil-collection)
 package, in `evil-collection-ebuku.el`.
+
+The index of a bookmark can be displayed in the echo area by moving
+the screen pointer over the leading `--` text for the bookmark.
 
 ### Completion
 
