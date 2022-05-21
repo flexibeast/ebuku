@@ -82,6 +82,12 @@
 ;; * `C' - Copy the URL of the bookmark at point to the kill ring
 ;;   (`ebuku-copy-url').
 
+;; * `T` - Copy the title of the bookmark at point to the kill ring
+;;   (`ebuku-copy-title').
+
+;; * `I` - Copy the index of the bookmark at point to the kill ring
+;;   (`ebuku-copy-index').
+
 ;; * `q' - Quit Ebuku.
 
 ;; Bindings for Evil are available via the
@@ -293,6 +299,8 @@ Set this variable to 0 for no maximum."
     (define-key km (kbd "-") #'ebuku-toggle-results-limit)
     (define-key km (kbd "<RET>") #'ebuku-open-url)
     (define-key km (kbd "C") #'ebuku-copy-url)
+    (define-key km (kbd "I") #'ebuku-copy-index)
+    (define-key km (kbd "T") #'ebuku-copy-title)
     (define-key km [mouse-1] #'ebuku-open-url)
     (define-key km [mouse-2] #'ebuku-open-url)
     km))
@@ -325,6 +333,33 @@ Set this variable to 0 for no maximum."
                             "--np" "--nc"
                             "--db" ,ebuku-database-path
                             ,@args)))
+
+(defun ebuku--copy-component (component)
+  "Internal function to copy COMPONENT of bookmark at point to kill ring."
+  (let ((index (get-char-property (point) 'buku-index)))
+    (if index
+        (save-excursion
+          (goto-char
+           (1+ (previous-single-property-change
+                (point)
+                'buku-index)))
+          (cond
+           ((eq component 'index)
+            (progn
+              (kill-new index)
+              (message "Copied: %s" index)))
+           ((eq component 'title)
+            (goto-char (next-single-property-change (point) 'data))
+            (let ((title (get-char-property (point) 'data)))
+              (kill-new title)
+              (message "Copied: %s" title)))
+           ((eq component 'url)
+            (forward-line)
+            (goto-char (next-single-property-change (point) 'data))
+            (let ((url (get-char-property (point) 'data)))
+              (kill-new url)
+              (message "Copied: %s" url)))))
+      (user-error "No bookmark at point"))))
 
 (defun ebuku--create-mode-menu ()
   "Internal function to create the `ebuku-mode' menu."
@@ -700,19 +735,20 @@ This cache is populated by the `ebuku-update-tags-cache' command.")
               (message "Bookmark added."))
           (error "Failed to add bookmark"))))))
 
+(defun ebuku-copy-index ()
+  "Copy the index of the bookmark at point to the kill ring."
+  (interactive)
+  (ebuku--copy-component 'index))
+
+(defun ebuku-copy-title ()
+  "Copy the title of the bookmark at point to the kill ring."
+  (interactive)
+  (ebuku--copy-component 'title))
+
 (defun ebuku-copy-url ()
   "Copy the URL of the bookmark at point to the kill ring."
   (interactive)
-  (let ((index (get-char-property (point) 'buku-index)))
-    (if index
-        (save-excursion
-          (goto-char (1+ (previous-single-property-change (point) 'buku-index)))
-          (forward-line)
-          (goto-char (next-single-property-change (point) 'data))
-          (let ((url-to-copy (browse-url-url-at-point)))
-            (kill-new url-to-copy)
-            (message "Copied: %s" url-to-copy)))
-      (user-error "No bookmark URL at point"))))
+  (ebuku--copy-component 'url))
 
 (defun ebuku-delete-bookmark ()
   "Delete a bookmark from the buku database.
