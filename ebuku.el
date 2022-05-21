@@ -88,6 +88,9 @@
 ;; [evil-collection](https://github.com/emacs-evil/evil-collection)
 ;; package, in `evil-collection-ebuku.el`.
 
+;; The index of a bookmark can be displayed in the echo area by moving
+;; the screen pointer over the leading `--' text for the bookmark.
+
 ;; ### Completion
 
 ;; Ebuku provides two cache variables for use by completion frameworks
@@ -572,7 +575,8 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
           (with-current-buffer "*Ebuku*"
             (let ((inhibit-read-only t))
               (insert (propertize "  --  "
-                                  'buku-index index)
+                                  'buku-index index
+                                  'help-echo index)
                       (propertize title
                                   'buku-index index
                                   'data title
