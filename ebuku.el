@@ -696,6 +696,20 @@ This cache is populated by the `ebuku-update-tags-cache' command.")
               (message "Bookmark added."))
           (error "Failed to add bookmark"))))))
 
+(defun ebuku-copy-url ()
+  "Copy the URL of the bookmark at point to the kill ring."
+  (interactive)
+  (let ((index (get-char-property (point) 'buku-index)))
+    (if index
+        (save-excursion
+          (goto-char (1+ (previous-single-property-change (point) 'buku-index)))
+          (forward-line)
+          (goto-char (next-single-property-change (point) 'data))
+          (let ((url-to-copy (browse-url-url-at-point)))
+            (kill-new url-to-copy)
+            (message "Copied: %s" url-to-copy)))
+      (user-error "No bookmark URL at point"))))
+
 (defun ebuku-delete-bookmark ()
   "Delete a bookmark from the buku database.
 
@@ -814,20 +828,6 @@ The bookmarks are fetched from buku with the following arguments:
           (goto-char (next-single-property-change (point) 'data))
           (browse-url-at-point))
       (user-error "No bookmark at point"))))
-
-(defun ebuku-copy-url ()
-  "Copy the URL of the bookmark at point to the kill ring."
-  (interactive)
-  (let ((index (get-char-property (point) 'buku-index)))
-    (if index
-        (save-excursion
-          (goto-char (1+ (previous-single-property-change (point) 'buku-index)))
-          (forward-line)
-          (goto-char (next-single-property-change (point) 'data))
-          (let ((url-to-copy (browse-url-url-at-point)))
-            (kill-new url-to-copy)
-            (message "Copied: %s" url-to-copy)))
-      (user-error "No bookmark URL at point"))))
 
 (defun ebuku-previous-bookmark ()
   "Move point to the previous bookmark URL."
