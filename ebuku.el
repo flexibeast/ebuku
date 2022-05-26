@@ -466,6 +466,14 @@ Argument EVENT is the event received from that process."
             "0"))
       (error "Failed to get bookmark count"))))
 
+(defun ebuku--goto-line (n)
+  "Internal function to move to line N in buffer.
+
+The docstring for `goto-line' states that it's for interactive use only,
+and suggests instead using the code in the body of this function."
+  (goto-char (point-min))
+  (forward-line (1- n)))
+
 (defun ebuku--search-helper (type prompt &optional term exclude)
   "Internal function to call `buku' with appropriate search arguments.
 
@@ -521,7 +529,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
       (goto-char (point-min))
       (with-current-buffer "*Ebuku*"
         (let ((inhibit-read-only t))
-          (goto-line ebuku--results-start)
+          (ebuku--goto-line ebuku--results-start)
           (beginning-of-line)
           (kill-region (point) (point-max))
           (cond
@@ -653,7 +661,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
           (setq comment ""
                 tags ""))
         (with-current-buffer "*Ebuku*"
-          (goto-line ebuku--results-start)
+          (ebuku--goto-line ebuku--results-start)
           (beginning-of-line)
           (forward-line 2))))))
 
@@ -903,8 +911,8 @@ The bookmarks are fetched from buku with the following arguments:
             (progn
               (goto-char (point-min))
               (if (not (text-property-search-forward 'buku-index index))
-                  (goto-line ebuku--results-start)))
-          (goto-line line)))))
+                  (ebuku--goto-line ebuku--results-start)))
+          (ebuku--goto-line line)))))
 
 (defun ebuku-search (char)
   "Search the buku database for bookmarks.
@@ -1024,7 +1032,7 @@ If an argument is excluded, get it from `ebuku-cache-default-args'."
           (ebuku-search-on-recent))
          ((eq nil ebuku-display-on-startup)
           (insert "  [ Please specify a search, or press 'r' for recent additions. ]")))
-        (goto-line ebuku--results-start)
+        (ebuku--goto-line ebuku--results-start)
         (add-text-properties (point-min) (point)
                              '(read-only t intangible t))
         (ebuku--create-mode-menu)
