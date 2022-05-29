@@ -1036,6 +1036,7 @@ If an argument is excluded, get it from `ebuku-cache-default-args'."
         (ebuku--goto-line ebuku--results-start)
         (add-text-properties (point-min) (point)
                              '(read-only t intangible t))
+        (forward-line 2)
         (ebuku--create-mode-menu)
         (setq header-line-format nil)
         (ebuku-mode))
