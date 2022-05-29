@@ -937,13 +937,14 @@ the type of search to be performed."
   (ebuku--search-helper "--sany" "Keyword? "))
 
 (defun ebuku-search-on-recent ()
-  "Do a `buku' search for recently-added bookmarks."
-  (interactive)
-  (ebuku--search-helper "--print"
-                        "[recent]" ; Dummy prompt to indicate prefab 'search'
-                        (concat "-"
-                                (number-to-string ebuku-recent-count))
-                        ""))
+"Do a `buku' search for recently-added bookmarks."
+(interactive)
+(ebuku--search-helper "--print"
+                      "[recent]" ; Dummy prompt to indicate prefab 'search'
+                      (concat
+                       "-"
+                       (number-to-string ebuku-recent-count))
+                      ""))
 
 (defun ebuku-search-on-reg ()
   "Do a `buku' search using '--sreg'."
