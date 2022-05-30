@@ -717,7 +717,8 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                             (goto-char (prop-match-beginning prop-match))
                           (ebuku--goto-line first-result-line)))))))
               (ebuku--goto-line first-result-line))
-            (recenter)))))))
+            (if (eq (window-buffer) (current-buffer))
+                (recenter))))))))
 
 
 ;;
