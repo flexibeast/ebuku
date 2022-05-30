@@ -221,6 +221,12 @@ Set this variable to 0 for no maximum."
   :type 'integer
   :group 'ebuku)
 
+(defcustom ebuku-post-deletion-point-location 'previous
+  "Bookmark to which point should be moved after a deletion."
+  :type '(radio (const :tag "Previous" previous)
+                (const :tag "Next" next))
+  :group 'ebuku)
+
 (defcustom ebuku-retrieve-url-metadata t
   "Whether to automatically retrieve URL metadata when adding a bookmark."
   :type 'boolean
@@ -512,7 +518,23 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
          (index "")
          (url "")
          (comment "")
-         (tags ""))
+         (tags "")
+         (current-index (or ebuku--new-index
+                            (ebuku--get-index-at-point)))
+         (previous-index (let ((pos (previous-single-property-change
+                                     (point)
+                                     'buku-index)))
+                           (if pos
+                               (get-char-property (- pos 2) 'buku-index)
+                             nil)))
+         (next-index (let ((pos (next-single-property-change
+                                 (point)
+                                 'buku-index)))
+                       (if pos
+                           (get-char-property (1+ pos) 'buku-index)
+                         nil)))
+         (first-result-line (+ ebuku--results-start 2)))
+    (setq ebuku--new-index nil)
     (with-temp-buffer
       (if (string= "" exclude)
           (ebuku--call-buku `(,type ,term))
@@ -664,9 +686,39 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
           (setq comment ""
                 tags ""))
         (with-current-buffer "*Ebuku*"
-          (ebuku--goto-line ebuku--results-start)
-          (beginning-of-line)
-          (forward-line 2))))))
+          (progn
+            (if current-index
+                (progn
+                  (goto-char (point-min))
+                  (let ((prop-match
+                         (text-property-search-forward
+                          'buku-index
+                          current-index
+                          t)))
+                    (if prop-match
+                        (goto-char (prop-match-beginning prop-match))
+                      (cond
+                       ((eq ebuku-post-deletion-point-location 'previous)
+                        (if (and previous-index
+                                 (setq prop-match
+                                       (text-property-search-forward
+                                        'buku-index
+                                        previous-index
+                                        t)))
+                            (goto-char (prop-match-beginning prop-match))
+                          (ebuku--goto-line first-result-line)))
+                       ((eq ebuku-post-deletion-point-location 'next)
+                        (if (and next-index
+                                 (setq prop-match
+                                       (text-property-search-forward
+                                        'buku-index
+                                        next-index
+                                        t)))
+                            (goto-char (prop-match-beginning prop-match))
+                          (ebuku--goto-line first-result-line)))))))
+              (ebuku--goto-line first-result-line))
+            (recenter)))))))
+
 
 ;;
 ;; User-facing variables.
@@ -901,16 +953,7 @@ The bookmarks are fetched from buku with the following arguments:
   "Refresh the list of search results, based on last search."
   (interactive)
   (if ebuku--last-search
-      (let* ((term (nth 2 ebuku--last-search))
-             (index (get-char-property (point) 'buku-index))
-             (line (if (not index)
-                       (if (< (line-number-at-pos) (+ ebuku--results-start 2))
-                           (line-number-at-pos)
-                         (if (not (text-property-search-backward 'buku-index))
-                             (progn
-                               (text-property-search-forward 'buku-index)
-                               (line-number-at-pos))
-                           (line-number-at-pos))))))
+      (let* ((term (nth 2 ebuku--last-search)))
         (if (and (not (string= "[recent]" (nth 1 ebuku--last-search)))
                  (string-match "^-\\([[:digit:]]+\\)$" term))
             (let ((count (string-to-number (match-string 1 term))))
@@ -919,13 +962,8 @@ The bookmarks are fetched from buku with the following arguments:
                         (concat "-"
                                 (number-to-string ebuku-results-limit))))
               (apply #'ebuku--search-helper ebuku--last-search))
-          (apply #'ebuku--search-helper ebuku--last-search))
-        (if index
-            (progn
-              (goto-char (point-min))
-              (if (not (text-property-search-forward 'buku-index index))
-                  (ebuku--goto-line ebuku--results-start)))
-          (ebuku--goto-line line)))))
+          (apply #'ebuku--search-helper ebuku--last-search)))))
+
 
 (defun ebuku-search (char)
   "Search the buku database for bookmarks.
