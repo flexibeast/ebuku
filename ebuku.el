@@ -316,6 +316,9 @@ Set this variable to 0 for no maximum."
 (defvar ebuku--last-results-limit 0
   "Internal variable for use by `ebuku-toggle-results-limit'.")
 
+(defvar ebuku--new-index nil
+  "Internal variable containing the index of the newly-added bookmark.")
+
 (defvar ebuku--results-start nil
   "Internal variable containing buffer line of start of search results.")
 
@@ -724,24 +727,35 @@ This cache is populated by the `ebuku-update-tags-cache' command.")
     (setq tags (read-from-minibuffer "Bookmark tag(s)? " tags))
     (setq comment (read-from-minibuffer "Bookmark comment? " comment))
     (if ebuku-retrieve-url-metadata
-        (with-temp-buffer
-          (if (ebuku--call-buku `("--update" ,index
-                                  "--title" ,title
-                                  "--comment" ,comment
-                                  "--tag" ,tags))
+        (progn
+          (with-temp-buffer
+            (if (not (ebuku--call-buku `("--update" ,index
+                                         "--title" ,title
+                                         "--comment" ,comment
+                                         "--tag" ,tags)))
+                (error "Failed to modify bookmark metadata")
               (progn
-                (ebuku-refresh)
-                (message "Bookmark added."))
-            (error "Failed to modify bookmark metadata")))
-      (with-temp-buffer
-        (if (ebuku--call-buku `("--add" ,url
-                                "--title" ,title
-                                "--tag" ,tags
-                                "--comment" ,comment))
+                (goto-char (point-min))
+                (re-search-forward "^\\([[:digit:]]+\\)\\.")
+                (setq ebuku--new-index (match-string 1)))))
+          (progn
+            (ebuku-refresh)
+            (message "Bookmark added.")))
+      (progn
+        (with-temp-buffer
+          (if (not (ebuku--call-buku `("--add" ,url
+                                       "--title" ,title
+                                       "--tag" ,tags
+                                       "--comment" ,comment)))
+              (error "Failed to add bookmark")
             (progn
-              (ebuku-refresh)
-              (message "Bookmark added."))
-          (error "Failed to add bookmark"))))))
+              (goto-char (point-min))
+              (re-search-forward "^\\([[:digit:]]+\\)\\.")
+              (setq ebuku--new-index (match-string 1))))
+          (progn
+            (ebuku-refresh)
+            (message "Bookmark added.")))))))
+
 
 (defun ebuku-copy-index ()
   "Copy the index of the bookmark at point to the kill ring."
@@ -798,15 +812,14 @@ otherwise, ask for the index of the bookmark to edit."
                             "Comment? "
                             (cdr (assoc 'comment bookmark)))))
               (with-temp-buffer
-                (if (ebuku--call-buku `("--update" ,index
-                                        "--title" ,title
-                                        "--url" ,url
-                                        "--comment" ,comment
-                                        "--tag" ,tags))
-                    (progn
-                      (ebuku-refresh)
-                      (message "Bookmark updated."))
-                  (error "Failed to update bookmark"))))
+                (if (not (ebuku--call-buku `("--update" ,index
+                                             "--title" ,title
+                                             "--url" ,url
+                                             "--comment" ,comment
+                                             "--tag" ,tags)))
+                    (error "Failed to update bookmark")))
+              (ebuku-refresh)
+              (message "Bookmark updated."))
           (error (concat "Failed to get bookmark data for index " index)))))))
 
 (defun ebuku-gather-bookmarks (&optional type term exclude)
