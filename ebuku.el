@@ -178,18 +178,19 @@
   :type '(repeat string)
   :group 'ebuku)
 
-(defcustom ebuku-database-path (cond
-                                ((eq system-type 'windows-nt)
-                                 (substitute-in-file-name
-                                  "%APPDATA%\buku\bookmarks.db"))
-                                ((getenv "XDG_DATA_HOME")
-                                 (substitute-in-file-name
-                                  "$XDG_DATA_HOME/buku/bookmarks.db"))
-                                ((getenv "HOME")
-                                 (substitute-in-file-name
-                                  "$HOME/.local/share/buku/bookmarks.db"))
-                                (t
-                                 "./bookmarks.db"))
+(defcustom ebuku-database-path
+  (cond
+   ((eq system-type 'windows-nt)
+    (substitute-in-file-name
+     "%APPDATA%\buku\bookmarks.db"))
+   ((getenv "XDG_DATA_HOME")
+    (substitute-in-file-name
+     "$XDG_DATA_HOME/buku/bookmarks.db"))
+   ((getenv "HOME")
+    (substitute-in-file-name
+     "$HOME/.local/share/buku/bookmarks.db"))
+   (t
+    "./bookmarks.db"))
   "Absolute path of the buku database."
   :type '(file :must-match t)
   :group 'ebuku)
@@ -209,6 +210,12 @@ Specify `\\='all' for all bookmarks; `\\='recent' for recent additions; or
   :type '(repeat function)
   :group 'ebuku)
 
+(defcustom ebuku-post-deletion-point-location 'previous
+  "Bookmark to which point should be moved after a deletion."
+  :type '(radio (const :tag "Previous" previous)
+                (const :tag "Next" next))
+  :group 'ebuku)
+
 (defcustom ebuku-recent-count 3
   "Number of recently-added bookmarks to show."
   :type 'integer
@@ -219,12 +226,6 @@ Specify `\\='all' for all bookmarks; `\\='recent' for recent additions; or
 
 Set this variable to 0 for no maximum."
   :type 'integer
-  :group 'ebuku)
-
-(defcustom ebuku-post-deletion-point-location 'previous
-  "Bookmark to which point should be moved after a deletion."
-  :type '(radio (const :tag "Previous" previous)
-                (const :tag "Next" next))
   :group 'ebuku)
 
 (defcustom ebuku-retrieve-url-metadata t
