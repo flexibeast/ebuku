@@ -78,7 +78,7 @@ be populated via the `ebuku-update-bookmarks-cache` and
 
 ## Customisation
 
-The `ebuku` customize-group can be used to customise:
+The `ebuku` customize-group includes variables for:
 
 * the path to the `buku` executable;
 
@@ -93,7 +93,10 @@ The `ebuku` customize-group can be used to customise:
 * whether to automatically retrieve URL metadata when adding a
   bookmark; and
 
-* the faces used by Ebuku.
+* the faces used by Ebuku;
+
+* whether to use `sqlite` to refresh the `ebuku-tags` cache variable
+  (requires separate installation of `sqlite3` executable).
 
 ## TODO
 

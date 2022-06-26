@@ -106,7 +106,7 @@
 
 ;; ## Customisation
 
-;; The `ebuku' customize-group can be used to customise:
+;; The `ebuku' customize-group includes variables for:
 
 ;; * the path to the `buku' executable;
 
@@ -121,7 +121,10 @@
 ;; * whether to automatically retrieve URL metadata when adding a
 ;;   bookmark; and
 
-;; * the faces used by Ebuku.
+;; * the faces used by Ebuku;
+
+;; * whether to use `sqlite' to refresh the `ebuku-tags' cache variable
+;;   (requires separate installation of `sqlite3' executable).
 
 ;; ## TODO
 
@@ -221,6 +224,14 @@ Specify `\\='all' for all bookmarks; `\\='recent' for recent additions; or
   :type 'integer
   :group 'ebuku)
 
+(defcustom ebuku-refresh-caches-on-results-refresh nil
+  "Whether to refresh the `ebuku-tags' cache when refreshing results.
+
+The time taken to refresh the cache depends on whether `sqlite' is being
+used, as determined by the `ebuku-use-sqlite' variable."
+  :type 'boolean
+  :group 'ebuku)
+
 (defcustom ebuku-results-limit 1000
   "Maximum number of bookmarks to show.
 
@@ -232,6 +243,19 @@ Set this variable to 0 for no maximum."
   "Whether to automatically retrieve URL metadata when adding a bookmark."
   :type 'boolean
   :group 'ebuku)
+
+(defcustom ebuku-sqlite-path (executable-find "sqlite3")
+  "Absolute path of the `sqlite3' executable."
+  :type 'file
+  :group 'ebuku)
+
+(defcustom ebuku-use-sqlite nil
+"Whether to use `sqlite' to update the tags cache.
+
+Using `sqlite' rather than `buku' can be several times faster, but the
+`sqlite3' executable must be installed separately."
+:type 'boolean
+:group 'ebuku)
 
 
 (defgroup ebuku-faces nil
@@ -343,6 +367,47 @@ Set this variable to 0 for no maximum."
                             "--np" "--nc"
                             "--db" ,ebuku-database-path
                             ,@args)))
+
+(defun ebuku--collect-tags-via-sqlite ()
+  "Internal function to update `ebuku-tags' cache via `sqlite'."
+  (if (not ebuku-sqlite-path)
+      (error "Can't find `sqlite3' executable")
+    (let ((inhibit-message t))
+      (with-temp-buffer
+        (call-process ebuku-sqlite-path
+                      nil t nil
+                      "-line"
+                      ebuku-database-path
+                      "select tags from bookmarks;")
+
+        ;; Remove blank lines.
+        (goto-char (point-min))
+        (flush-lines "^$")
+        ;; Remove lines with no tags.
+        (goto-char (point-min))
+        (flush-lines " ,$")
+        ;; Remove leading non-tag text.
+        (goto-char (point-min))
+        (while (re-search-forward " tags = ," nil t)
+          (replace-match ""))
+        ;; Join all lines.
+        (goto-char (point-min))
+        (while (re-search-forward ",\n" nil t)
+          (replace-match ","))
+        ;; Split on ',' to create one tag per line.
+        (goto-char (point-min))
+        (while (re-search-forward "," nil t)
+          (replace-match "\n"))
+        ;; Sort lines into lexicographic order.
+        (sort-lines nil (point-min) (point-max))
+        ;; Remove duplicates.
+        (delete-duplicate-lines (point-min) (point-max) nil t)
+
+        ;; Refresh cache.
+        (goto-char (point-min))
+        (setq ebuku-tags '())
+        (while (re-search-forward "^\\(.+\\)$" nil t)
+          (setq ebuku-tags (cons (match-string 1) tags-cache)))))))
 
 (defun ebuku--copy-component (component)
   "Internal function to copy COMPONENT of bookmark at point to kill ring."
@@ -954,6 +1019,8 @@ The bookmarks are fetched from buku with the following arguments:
 (defun ebuku-refresh ()
   "Refresh the list of search results, based on last search."
   (interactive)
+  (if ebuku-refresh-caches-on-results-refresh
+      (ebuku-update-tags-cache))
   (if ebuku--last-search
       (let* ((term (nth 2 ebuku--last-search)))
         (if (and (not (string= "[recent]" (nth 1 ebuku--last-search)))
@@ -1046,11 +1113,13 @@ If an argument is excluded, get it from `ebuku-cache-default-args'."
 (defun ebuku-update-tags-cache ()
   "Repopulate the `ebuku-tags' variable."
   (interactive)
-  (let ((tags '()))
-    (ebuku-update-bookmarks-cache)
-    (dolist (bookmark ebuku-bookmarks)
-      (setq tags (nconc (map-elt bookmark 'tags) tags)))
-    (setq ebuku-tags (sort (seq-uniq tags) 'string-collate-lessp))))
+  (if ebuku-use-sqlite
+      (ebuku--collect-tags-via-sqlite)
+    (let ((tags '()))
+      (ebuku-update-bookmarks-cache)
+      (dolist (bookmark ebuku-bookmarks)
+        (setq tags (nconc (map-elt bookmark 'tags) tags)))
+      (setq ebuku-tags (sort (seq-uniq tags) 'string-collate-lessp)))))
 
 
 ;;;###autoload
