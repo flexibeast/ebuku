@@ -95,8 +95,9 @@ The `ebuku` customize-group includes variables for:
 
 * the faces used by Ebuku;
 
-* whether to use `sqlite` to refresh the `ebuku-tags` cache variable
-  (requires separate installation of `sqlite3` executable).
+* whether to use `sqlite` to refresh the `ebuku-bookmarks` and
+  `ebuku-tags` cache variables (requires separate installation of
+  `sqlite3` executable).
 
 ## TODO
 

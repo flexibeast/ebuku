@@ -123,8 +123,9 @@
 
 ;; * the faces used by Ebuku;
 
-;; * whether to use `sqlite' to refresh the `ebuku-tags' cache variable
-;;   (requires separate installation of `sqlite3' executable).
+;; * whether to use `sqlite' to refresh the `ebuku-bookmarks' and
+;;   `ebuku-tags' cache variables (requires separate installation of
+;;   `sqlite3' executable).
 
 ;; ## TODO
 
@@ -225,9 +226,10 @@ Specify `\\='all' for all bookmarks; `\\='recent' for recent additions; or
   :group 'ebuku)
 
 (defcustom ebuku-refresh-caches-on-results-refresh nil
-  "Whether to refresh the `ebuku-tags' cache when refreshing results.
+  "Whether to refresh the `ebuku-bookmarks' and `ebuku-tags' cache variables
+when refreshing results.
 
-The time taken to refresh the cache depends on whether `sqlite' is being
+The time taken to refresh the caches depends on whether `sqlite' is being
 used, as determined by the `ebuku-use-sqlite' variable."
   :type 'boolean
   :group 'ebuku)
@@ -250,12 +252,13 @@ Set this variable to 0 for no maximum."
   :group 'ebuku)
 
 (defcustom ebuku-use-sqlite nil
-"Whether to use `sqlite' to update the tags cache.
+  "Whether to use `sqlite' to update the `ebuku-bookmarks' and `ebuku-tags'
+cache variables.
 
 Using `sqlite' rather than `buku' can be several times faster, but the
 `sqlite3' executable must be installed separately."
-:type 'boolean
-:group 'ebuku)
+  :type 'boolean
+  :group 'ebuku)
 
 
 (defgroup ebuku-faces nil
@@ -367,6 +370,42 @@ Using `sqlite' rather than `buku' can be several times faster, but the
                             "--np" "--nc"
                             "--db" ,ebuku-database-path
                             ,@args)))
+
+(defun ebuku--collect-bookmarks-via-sqlite ()
+  "Internal function to update `ebuku-bookmarks' cache via `sqlite'."
+  (if (not ebuku-sqlite-path)
+      (error "Can't find `sqlite3' executable")
+    (let ((inhibit-message t))
+      (with-temp-buffer
+        ;; Use 'US', the Unit Separator character, to separate bookmark fields.
+        (call-process ebuku-sqlite-path
+                      nil t nil
+                      "-separator" "\037"
+                      ebuku-database-path
+                      "select * from bookmarks;")
+
+        ;; Refresh cache.
+        (goto-char (point-min))
+        (setq ebuku-bookmarks '())
+        (while (re-search-forward (concat "^"
+                                          "\\([^\037]+\\)"
+                                          "\037"
+                                          "\\([^\037]+\\)"
+                                          "\037"
+                                          "\\([^\037]+\\)"
+                                          "\037"
+                                          "\\([^\037]*\\)"
+                                          "\037"
+                                          "\\([^\037]*\\)"
+                                          "$")
+                                  nil t)
+          (let* ((bookmark))
+            (map-put bookmark 'index (match-string 1))
+            (map-put bookmark 'url (match-string 2))
+            (map-put bookmark 'title (match-string 3))
+            (map-put bookmark 'tags (split-string (match-string 4) "," t))
+            (map-put bookmark 'comment (match-string 5))
+            (setq ebuku-bookmarks (cons bookmark ebuku-bookmarks))))))))
 
 (defun ebuku--collect-tags-via-sqlite ()
   "Internal function to update `ebuku-tags' cache via `sqlite'."
@@ -1013,7 +1052,9 @@ The bookmarks are fetched from buku with the following arguments:
   "Refresh the list of search results, based on last search."
   (interactive)
   (if ebuku-refresh-caches-on-results-refresh
-      (ebuku-update-tags-cache))
+      (progn
+        (ebuku-update-bookmarks-cache)
+        (ebuku-update-tags-cache)))
   (if ebuku--last-search
       (let* ((term (nth 2 ebuku--last-search)))
         (if (and (not (string= "[recent]" (nth 1 ebuku--last-search)))
@@ -1097,11 +1138,13 @@ The maximum number of bookmarks to show is specified by
 The arguments TYPE, TERM, and EXCLUDE are passed to `ebuku-gather-bookmarks'.
 If an argument is excluded, get it from `ebuku-cache-default-args'."
   (interactive)
-  (setq ebuku-bookmarks
-        (ebuku-gather-bookmarks
-         (or type (nth 0 ebuku-cache-default-args))
-         (or term (nth 1 ebuku-cache-default-args))
-         (or exclude (nth 2 ebuku-cache-default-args)))))
+  (if ebuku-use-sqlite
+      (ebuku--collect-bookmarks-via-sqlite)
+    (setq ebuku-bookmarks
+          (ebuku-gather-bookmarks
+           (or type (nth 0 ebuku-cache-default-args))
+           (or term (nth 1 ebuku-cache-default-args))
+           (or exclude (nth 2 ebuku-cache-default-args))))))
 
 (defun ebuku-update-tags-cache ()
   "Repopulate the `ebuku-tags' variable."
