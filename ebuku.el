@@ -376,24 +376,17 @@ Using `sqlite' rather than `buku' can be several times faster, but the
       (with-temp-buffer
         (call-process ebuku-sqlite-path
                       nil t nil
-                      "-line"
                       ebuku-database-path
                       "select tags from bookmarks;")
 
-        ;; Remove blank lines.
-        (goto-char (point-min))
-        (flush-lines "^$")
         ;; Remove lines with no tags.
         (goto-char (point-min))
-        (flush-lines " ,$")
-        ;; Remove leading non-tag text.
+        (flush-lines "^,$")
+        ;; Delete first ',', then join all lines.
         (goto-char (point-min))
-        (while (re-search-forward " tags = ," nil t)
-          (replace-match ""))
-        ;; Join all lines.
-        (goto-char (point-min))
+        (delete-char 1)
         (while (re-search-forward ",\n" nil t)
-          (replace-match ","))
+          (replace-match ""))
         ;; Split on ',' to create one tag per line.
         (goto-char (point-min))
         (while (re-search-forward "," nil t)
@@ -407,7 +400,7 @@ Using `sqlite' rather than `buku' can be several times faster, but the
         (goto-char (point-min))
         (setq ebuku-tags '())
         (while (re-search-forward "^\\(.+\\)$" nil t)
-          (setq ebuku-tags (cons (match-string 1) tags-cache)))))))
+          (setq ebuku-tags (cons (match-string 1) ebuku-tags)))))))
 
 (defun ebuku--copy-component (component)
   "Internal function to copy COMPONENT of bookmark at point to kill ring."
