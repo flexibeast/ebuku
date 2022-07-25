@@ -1172,6 +1172,7 @@ If an argument is excluded, get it from `ebuku-cache-default-args'."
   (if (get-buffer "*Ebuku*")
       (switch-to-buffer "*Ebuku*")
     (progn
+      (ebuku-update-tags-cache)
       (setq ebuku--last-search nil)
       (with-current-buffer (generate-new-buffer "*Ebuku*")
         (goto-char (point-min))
