@@ -875,7 +875,10 @@ This cache is populated by the `ebuku-update-tags-cache' command.")
                     (setq comment (match-string 3))))
             (error "Failed to add bookmark"))))
     (setq title (read-from-minibuffer "Bookmark title? " title))
-    (setq tags (read-from-minibuffer "Bookmark tag(s)? " tags))
+    (setq tags (mapconcat
+                #'identity
+                (completing-read-multiple "Bookmark tag(s)? " ebuku-tags)
+                ","))
     (setq comment (read-from-minibuffer "Bookmark comment? " comment))
     (if ebuku-retrieve-url-metadata
         (progn
@@ -955,9 +958,15 @@ otherwise, ask for the index of the bookmark to edit."
                   (url (read-from-minibuffer
                         "URL? "
                         (cdr (assoc 'url bookmark))))
-                  (tags (read-from-minibuffer
-                         "Tags? "
-                         (cdr (assoc 'tags bookmark))))
+                  (tags (mapconcat
+                         #'identity
+                         (completing-read-multiple
+                          "Tags? "
+                          ebuku-tags
+                          nil
+                          nil
+                          (cadr (assoc 'tags bookmark)))
+                         ","))
                   (comment (read-from-minibuffer
                             "Comment? "
                             (cdr (assoc 'comment bookmark)))))
