@@ -907,7 +907,6 @@ This cache is populated by the `ebuku-update-tags-cache' command.")
             (ebuku-refresh)
             (message "Bookmark added.")))))))
 
-
 (defun ebuku-copy-index ()
   "Copy the index of the bookmark at point to the kill ring."
   (interactive)
