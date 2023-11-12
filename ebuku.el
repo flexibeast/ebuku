@@ -655,7 +655,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
         (let ((inhibit-read-only t))
           (ebuku--goto-line ebuku--results-start)
           (beginning-of-line)
-          (kill-region (point) (point-max))
+          (delete-region (point) (point-max))
           (cond
            ((string= "0" count)
             (insert (concat "  No results found for '" search "'.\n\n")))
