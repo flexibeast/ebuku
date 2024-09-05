@@ -383,7 +383,7 @@ Using `sqlite' rather than `buku' can be several times faster, but the
                       nil t nil
                       "-separator" "\037"
                       ebuku-database-path
-                      "select * from bookmarks;")
+                      "select id, url, metadata, tags, desc from bookmarks;")
 
         ;; Refresh cache.
         (goto-char (point-min))
