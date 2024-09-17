@@ -1166,6 +1166,53 @@ If an argument is excluded, get it from `ebuku-cache-default-args'."
         (setq tags (nconc (map-elt bookmark 'tags) tags)))
       (setq ebuku-tags (sort (seq-uniq tags) 'string-collate-lessp)))))
 
+(defun ebuku-append-tag-to-bookmark ()
+  "Append tag to bookmark at point."
+  (interactive)
+  (ebuku-update-tags-cache)
+  (let ((tag (completing-read "Append tag? " ebuku-tags))
+	(index (ebuku--get-index-at-point))
+	(inhibit-read-only t))
+    (ebuku--tags-add index tag)
+    (ebuku-refresh)
+    (message "Added tag to bookmark")))
+
+(defun ebuku--tags-join (tags)
+  "Internal function to join a list of TAGS into a comma separated string."
+  (cond ((stringp tags)
+	 tags)
+	((listp tags)
+	 (mapconcat 'identity tags ","))
+	(t
+	 (error "Tags need to be either a string or list"))))
+
+(defun ebuku--tags-add (index tags)
+  "Internal function to append TAGS to the list of tags on the INDEX."
+  (with-temp-buffer
+    (ebuku--call-buku
+     `("--update" , index
+       "--tag", "+" , (ebuku--tags-join tags)))))
+
+(defun ebuku--tags-remove (index tags)
+  "Internal function to remove TAGS from the list of tags on the INDEX."
+  (with-temp-buffer
+    (ebuku--call-buku
+     `("--update" , index
+       "--tag", "-" , (ebuku--tags-join tags)))))
+
+(defun ebuku--tags-set (index tags)
+  "Internal function to set TAGS on the INDEX.
+
+This function does not append to the current list of TAGS it replaces it."
+  (with-temp-buffer
+    (ebuku--call-buku
+     `("--update" , index
+       "--tag", (ebuku--tags-join tags)))))
+
+(defun ebuku--tags-clear (index)
+  "Internal function to clear all tags from INDEX."
+  (ebuku--tags-set index ""))
+
 
 ;;;###autoload
 (define-derived-mode ebuku-mode special-mode "Ebuku"
