@@ -691,7 +691,7 @@ Argument EXCLUDE is a string: keywords to exclude from search results."
                                       "   of 'ebuku-results-limit'.)\n\n"))))))))))
       (unless (string= "0" count)
         (while (re-search-forward
-                (concat title-line-re "\n")
+                (concat title-line-re "$")
                 nil
                 t)
           (if (string= "--print" type)
