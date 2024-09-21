@@ -1,6 +1,6 @@
 # ebuku - Interface to the buku Web bookmark manager
 
-*Author:* Alexis <flexibeast@gmail.com>, Erik Sjöstrand <sjostrand.erik@gmail.com>, Junji Zhi [https://github.com/junjizhi]<br>
+*Author:* Alexis <flexibeast@gmail.com>, Erik Sjöstrand <sjostrand.erik@gmail.com>, Junji Zhi [https://github.com/junjizhi], Hilton Chain <hako@ultrarare.space><br>
 *Version:* 0<br>
 
 Ebuku provides a basic interface to the
@@ -21,6 +21,12 @@ Ebuku provides a basic interface to the
 
 Install [Ebuku from MELPA](https://melpa.org/#/ebuku), or put the
 `ebuku` folder in your load-path and do a `(load "ebuku")`.
+
+Windows users should ensure that the `LC_` environment variables,
+and the `LC_ALL` environment variable in particular, are set
+correctly for their locale (e.g. `zh_CN.UTF-8`). The value of an
+environment variable can be determined via the `getenv` command
+(e.g. `M-x getenv RET LC_ALL RET`).
 
 ## Usage
 
@@ -54,11 +60,14 @@ In the `*Ebuku*` buffer, the following bindings are available:
   bookmark, edit that bookmark; otherwise, ask for the index of the
   bookmark to edit.
 
-* <kbd>C</kbd> - Copy the URL of the bookmark at point to the kill ring (`ebuku-copy-url`).
+* <kbd>C</kbd> - Copy the URL of the bookmark at point to the kill ring
+  (`ebuku-copy-url`).
 
-* <kbd>T</kbd> - Copy the title of the bookmark at point to the kill ring (`ebuku-copy-title`).
+* <kbd>T</kbd> - Copy the title of the bookmark at point to the kill ring
+  (`ebuku-copy-title`).
 
-* <kbd>I</kbd> - Copy the index of the bookmark at point to the kill ring (`ebuku-copy-index`).
+* <kbd>I</kbd> - Copy the index of the bookmark at point to the kill ring
+  (`ebuku-copy-index`).
 
 * <kbd>q</kbd> - Quit Ebuku.
 
